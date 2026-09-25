@@ -35,7 +35,8 @@ import {
   Wand2,
   HelpCircle,
   X,
-  FileSpreadsheet,
+  ArrowRight,
+  MoreVertical,
 } from "lucide-react";
 
 type VideoMode = "video" | "image" | "text";
@@ -78,7 +79,7 @@ export default function VideoTranslatorPage() {
   const [preserveOriginalVoice, setPreserveOriginalVoice] = useState<boolean>(true);
   const [consentConfirmed, setConsentConfirmed] = useState<boolean>(true);
 
-  // Voice Speed (Default 1.0x preserved!)
+  // Voice Speed (Default strictly preserved as 1.0x)
   const [voiceSpeed, setVoiceSpeed] = useState<string>("1.0");
 
   // Input Assets
@@ -125,12 +126,13 @@ export default function VideoTranslatorPage() {
   // UI Modals
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [copiedTranscript, setCopiedTranscript] = useState(false);
+  const [copiedTranslation, setCopiedTranslation] = useState(false);
 
   // Drag and drop state
   const [isDraggingVideo, setIsDraggingVideo] = useState(false);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
 
-  // Recent video projects
+  // Recent video projects (Matches Reference Specification)
   const [recentProjects, setRecentProjects] = useState<RecentVideoProject[]>([
     {
       id: "demo-1",
@@ -154,7 +156,15 @@ export default function VideoTranslatorPage() {
       srcLang: "Hindi",
       tgtLang: "English",
       duration: "00:45",
-      date: "Sep 23, 2026",
+      date: "Sep 22, 2026",
+    },
+    {
+      id: "demo-4",
+      title: "Conference Speech",
+      srcLang: "English",
+      tgtLang: "Hindi",
+      duration: "02:10",
+      date: "Sep 20, 2026",
     },
   ]);
 
@@ -169,7 +179,7 @@ export default function VideoTranslatorPage() {
     }
   }, [activeMode]);
 
-  // Fetch voice profiles
+  // Fetch voice profiles and projects
   useEffect(() => {
     fetch("/api/voices")
       .then((res) => res.json())
@@ -484,352 +494,699 @@ export default function VideoTranslatorPage() {
     return "pending";
   };
 
-  const copyText = (txt: string) => {
+  const copyText = (txt: string, type: "transcript" | "translation") => {
     navigator.clipboard.writeText(txt);
-    setCopiedTranscript(true);
-    setTimeout(() => setCopiedTranscript(false), 2000);
+    if (type === "transcript") {
+      setCopiedTranscript(true);
+      setTimeout(() => setCopiedTranscript(false), 2000);
+    } else {
+      setCopiedTranslation(true);
+      setTimeout(() => setCopiedTranslation(false), 2000);
+    }
   };
 
   return (
-    <AppLayout>
-      <div className="flex flex-col gap-8 pb-12">
-        {/* SECTION 5: HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                AI Video Translator
-              </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-violet-500/20 to-cyan-500/20 border border-violet-500/40 text-cyan-300">
-                Beta
-              </span>
+    <AppLayout variant="light-workspace" maxWidth="max-w-[1760px]">
+      <div className="flex flex-col xl:flex-row gap-6 items-start w-full">
+        {/* ============================================================ */}
+        {/* CENTER COLUMN: MAIN AI VIDEO TRANSLATOR WORKSPACE */}
+        {/* ============================================================ */}
+        <div className="flex-1 min-w-0 flex flex-col gap-6 w-full">
+          {/* SECTION 6: HERO SECTION (~130px height) */}
+          <div className="relative overflow-hidden rounded-2xl bg-[#08162B] border border-white/10 p-5 sm:p-6 shadow-md min-h-[130px] flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Glowing gradient background accents */}
+            <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#5B35F5]/30 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-[#35D6FF]/20 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Left: Title, Beta Badge, and Description */}
+            <div className="relative z-10 max-w-xl">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight font-sans">
+                  AI Video Translator
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm">
+                  Beta
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Turn any video, image, or text into a realistic talking video in any language with the same person and voice.
+              </p>
             </div>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Turn your video, image, voice, or text into a realistic multilingual video.
-            </p>
+
+            {/* Right: Person Avatar visual, Waveforms & Tamil -> English transformation */}
+            <div className="relative z-10 flex items-center gap-4 shrink-0 bg-white/[0.04] p-3 rounded-2xl border border-white/[0.08]">
+              {/* Avatar with glowing ring */}
+              <div className="relative h-12 w-12 rounded-xl bg-gradient-to-tr from-[#5B35F5] via-[#268CFF] to-[#35D6FF] p-[2px] shadow-lg shadow-[#5B35F5]/30 shrink-0">
+                <div className="h-full w-full rounded-[10px] bg-[#08162B] flex items-center justify-center overflow-hidden">
+                  <User className="h-6 w-6 text-[#35D6FF]" />
+                </div>
+              </div>
+
+              {/* Waveform graphic */}
+              <div className="flex items-center gap-1 h-6">
+                {[12, 24, 18, 28, 14, 22, 16, 26, 10].map((h, i) => (
+                  <span
+                    key={i}
+                    className="w-1 bg-gradient-to-t from-[#5B35F5] to-[#35D6FF] rounded-full animate-pulse"
+                    style={{
+                      height: `${h}px`,
+                      animationDelay: `${i * 120}ms`,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Language Transformation Badge */}
+              <div className="flex flex-col text-right pl-1">
+                <span className="text-[10px] font-bold text-[#35D6FF] tracking-wider uppercase">
+                  Tamil → English
+                </span>
+                <span className="text-xs font-semibold text-white tracking-tight flex items-center gap-1.5 justify-end">
+                  <span className="text-slate-300 font-normal">&quot;வணக்கம்&quot;</span>
+                  <ArrowRight className="h-3 w-3 text-[#35D6FF]" />
+                  <span className="text-white font-bold">&quot;Hello&quot;</span>
+                </span>
+              </div>
+
+              {/* How it works Button */}
+              <button
+                onClick={() => setShowHowItWorks(true)}
+                className="ml-2 p-2 rounded-xl text-slate-400 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] transition-all"
+                title="How AI Video Translator works"
+                aria-label="How it works"
+              >
+                <HelpCircle className="h-4 w-4 text-[#35D6FF]" />
+              </button>
+            </div>
           </div>
 
-          <button
-            onClick={() => setShowHowItWorks(true)}
-            className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-violet-500/30 transition-all"
-          >
-            <HelpCircle className="h-3.5 w-3.5 text-cyan-400" />
-            <span>How it works?</span>
-          </button>
-        </div>
-
-        {/* SECTION 6: MODE SELECTOR (3 LARGE TABS) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Tab 1: Video to Video */}
-          <button
-            onClick={() => {
-              setActiveMode("video");
-              setActiveInputTab("upload_video");
-            }}
-            className={`p-4 rounded-2xl text-left transition-all ${
-              activeMode === "video"
-                ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-violet-500/25 ring-1 ring-white/30"
-                : "saas-card text-slate-300 hover:text-white hover:bg-white/[0.05]"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <Video className={`h-4 w-4 ${activeMode === "video" ? "text-white" : "text-violet-400"}`} />
-              <span className="font-bold text-sm tracking-wide">VIDEO TO VIDEO</span>
-            </div>
-            <p className={`text-xs ${activeMode === "video" ? "text-violet-100" : "text-slate-400"}`}>
-              Translate existing video.
-            </p>
-          </button>
-
-          {/* Tab 2: Image to Video */}
-          <button
-            onClick={() => {
-              setActiveMode("image");
-              setActiveInputTab("use_image");
-            }}
-            className={`p-4 rounded-2xl text-left transition-all ${
-              activeMode === "image"
-                ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-violet-500/25 ring-1 ring-white/30"
-                : "saas-card text-slate-300 hover:text-white hover:bg-white/[0.05]"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <ImageIcon className={`h-4 w-4 ${activeMode === "image" ? "text-white" : "text-cyan-400"}`} />
-              <span className="font-bold text-sm tracking-wide">IMAGE TO VIDEO</span>
-            </div>
-            <p className={`text-xs ${activeMode === "image" ? "text-violet-100" : "text-slate-400"}`}>
-              Upload image + text/voice.
-            </p>
-          </button>
-
-          {/* Tab 3: Text to Video */}
-          <button
-            onClick={() => {
-              setActiveMode("text");
-              setActiveInputTab("type_text");
-            }}
-            className={`p-4 rounded-2xl text-left transition-all ${
-              activeMode === "text"
-                ? "bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-violet-500/25 ring-1 ring-white/30"
-                : "saas-card text-slate-300 hover:text-white hover:bg-white/[0.05]"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <FileText className={`h-4 w-4 ${activeMode === "text" ? "text-white" : "text-indigo-400"}`} />
-              <span className="font-bold text-sm tracking-wide">TEXT TO VIDEO</span>
-            </div>
-            <p className={`text-xs ${activeMode === "text" ? "text-violet-100" : "text-slate-400"}`}>
-              Type text and generate video.
-            </p>
-          </button>
-        </div>
-
-        {/* Global Error Banner */}
-        {errorMessage && (
-          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200 text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2.5">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-              <span>{errorMessage}</span>
-            </div>
+          {/* SECTION 7: MODE SELECTOR (3 LARGE TABS FULL WIDTH) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+            {/* Tab 1: Video to Video */}
             <button
-              onClick={() => setErrorMessage(null)}
-              className="text-xs text-red-400 hover:text-red-300 underline font-medium"
+              type="button"
+              onClick={() => {
+                setActiveMode("video");
+                setActiveInputTab("upload_video");
+              }}
+              className={`p-4 rounded-2xl text-left transition-all ${
+                activeMode === "video"
+                  ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-lg shadow-[#5B35F5]/25 ring-1 ring-white/30"
+                  : "bg-white border border-[#D9E2F0] text-[#17233C] hover:border-[#5B35F5]/40 hover:shadow-sm"
+              }`}
             >
-              Dismiss
+              <div className="flex items-center gap-2.5 mb-1">
+                <Video className={`h-4 w-4 ${activeMode === "video" ? "text-white" : "text-[#5B35F5]"}`} />
+                <span className="font-bold text-sm tracking-wide">VIDEO TO VIDEO</span>
+              </div>
+              <p className={`text-xs ${activeMode === "video" ? "text-blue-100" : "text-[#61708A]"}`}>
+                Translate existing video
+              </p>
+            </button>
+
+            {/* Tab 2: Image to Video */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMode("image");
+                setActiveInputTab("use_image");
+              }}
+              className={`p-4 rounded-2xl text-left transition-all ${
+                activeMode === "image"
+                  ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-lg shadow-[#5B35F5]/25 ring-1 ring-white/30"
+                  : "bg-white border border-[#D9E2F0] text-[#17233C] hover:border-[#5B35F5]/40 hover:shadow-sm"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 mb-1">
+                <ImageIcon className={`h-4 w-4 ${activeMode === "image" ? "text-white" : "text-[#268CFF]"}`} />
+                <span className="font-bold text-sm tracking-wide">IMAGE TO VIDEO</span>
+              </div>
+              <p className={`text-xs ${activeMode === "image" ? "text-blue-100" : "text-[#61708A]"}`}>
+                Upload image + text/voice
+              </p>
+            </button>
+
+            {/* Tab 3: Text to Video */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMode("text");
+                setActiveInputTab("type_text");
+              }}
+              className={`p-4 rounded-2xl text-left transition-all ${
+                activeMode === "text"
+                  ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-lg shadow-[#5B35F5]/25 ring-1 ring-white/30"
+                  : "bg-white border border-[#D9E2F0] text-[#17233C] hover:border-[#5B35F5]/40 hover:shadow-sm"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 mb-1">
+                <FileText className={`h-4 w-4 ${activeMode === "text" ? "text-white" : "text-[#5B35F5]"}`} />
+                <span className="font-bold text-sm tracking-wide">TEXT TO VIDEO</span>
+              </div>
+              <p className={`text-xs ${activeMode === "text" ? "text-blue-100" : "text-[#61708A]"}`}>
+                Type text and generate video
+              </p>
             </button>
           </div>
-        )}
 
-        {/* SECTION 7: MAIN WORKSPACE (2-COLUMN LAYOUT) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* ============================================================ */}
-          {/* LEFT COLUMN: 40% (lg:col-span-5) - INPUT & SETTINGS */}
-          {/* ============================================================ */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
-            {/* SECTION 8: INPUT CARD */}
-            <div className="saas-card p-6 border border-white/[0.08]">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600/30 text-violet-300 text-[11px] font-bold">
-                      1
-                    </span>
-                    <h2 className="text-sm font-bold text-white">Input</h2>
+          {/* Global Error Alert Banner */}
+          {errorMessage && (
+            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                <span className="font-medium">{errorMessage}</span>
+              </div>
+              <button
+                onClick={() => setErrorMessage(null)}
+                className="text-xs text-red-600 hover:text-red-800 underline font-semibold"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* SECTION 8: MAIN WORKSPACE (2-COLUMN LAYOUT) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* ============================================================ */}
+            {/* LEFT COLUMN: ~45% (lg:col-span-5) - INPUT & SETTINGS */}
+            {/* ============================================================ */}
+            <div className="lg:col-span-5 flex flex-col gap-6">
+              {/* SECTION 9: INPUT CARD */}
+              <div className="bg-white rounded-2xl border border-[#D9E2F0] p-5 sm:p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#5B35F5]/10 text-[#5B35F5] text-[11px] font-bold">
+                        1
+                      </span>
+                      <h2 className="text-sm font-bold text-[#17233C]">Input</h2>
+                    </div>
+                    <p className="text-xs text-[#61708A] mt-0.5">
+                      Upload a video, image, or provide text/voice
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Upload a video, image, or provide text/voice.
-                  </p>
                 </div>
-              </div>
 
-              {/* Input Card Tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-xl bg-slate-950/60 border border-white/[0.06] mb-5">
-                <button
-                  type="button"
-                  onClick={() => setActiveInputTab("upload_video")}
-                  className={`py-2 px-2 rounded-lg text-[11px] font-medium transition-all text-center truncate ${
-                    activeInputTab === "upload_video"
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Upload Video
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveInputTab("use_image")}
-                  className={`py-2 px-2 rounded-lg text-[11px] font-medium transition-all text-center truncate ${
-                    activeInputTab === "use_image"
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Use Image
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveInputTab("record_voice")}
-                  className={`py-2 px-2 rounded-lg text-[11px] font-medium transition-all text-center truncate ${
-                    activeInputTab === "record_voice"
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Record Voice
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveInputTab("type_text")}
-                  className={`py-2 px-2 rounded-lg text-[11px] font-medium transition-all text-center truncate ${
-                    activeInputTab === "type_text"
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Type Text
-                </button>
-              </div>
+                {/* Input Card Tabs */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-[#F4F7FC] border border-[#D9E2F0] mb-5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveInputTab("upload_video")}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-semibold transition-all text-center truncate ${
+                      activeInputTab === "upload_video"
+                        ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm"
+                        : "text-[#61708A] hover:text-[#17233C]"
+                    }`}
+                  >
+                    Upload Video
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveInputTab("use_image")}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-semibold transition-all text-center truncate ${
+                      activeInputTab === "use_image"
+                        ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm"
+                        : "text-[#61708A] hover:text-[#17233C]"
+                    }`}
+                  >
+                    Use Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveInputTab("record_voice")}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-semibold transition-all text-center truncate ${
+                      activeInputTab === "record_voice"
+                        ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm"
+                        : "text-[#61708A] hover:text-[#17233C]"
+                    }`}
+                  >
+                    Record Voice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveInputTab("type_text")}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-semibold transition-all text-center truncate ${
+                      activeInputTab === "type_text"
+                        ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm"
+                        : "text-[#61708A] hover:text-[#17233C]"
+                    }`}
+                  >
+                    Type Text
+                  </button>
+                </div>
 
-              {/* SECTION 9: VIDEO UPLOAD UI */}
-              {activeInputTab === "upload_video" && (
-                <div>
-                  {!videoFile ? (
-                    <div
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setIsDraggingVideo(true);
-                      }}
-                      onDragLeave={() => setIsDraggingVideo(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDraggingVideo(false);
-                        if (e.dataTransfer.files?.[0]) {
-                          handleVideoFile(e.dataTransfer.files[0]);
-                        }
-                      }}
-                      className={`relative border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all ${
-                        isDraggingVideo
-                          ? "border-cyan-400 bg-cyan-500/10 shadow-lg shadow-cyan-500/20"
-                          : "border-white/10 hover:border-violet-500/40 bg-white/[0.02]"
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) handleVideoFile(e.target.files[0]);
+                {/* TAB 1: UPLOAD VIDEO UI */}
+                {activeInputTab === "upload_video" && (
+                  <div>
+                    {!videoFile ? (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingVideo(true);
                         }}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
-                      <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-violet-600/30 to-cyan-500/30 flex items-center justify-center mb-3">
-                        <Upload className="h-6 w-6 text-cyan-400" />
-                      </div>
-                      <p className="text-xs font-semibold text-white">
-                        Drag & drop a video file here
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-1">or click to upload</p>
-                      <div className="mt-4 flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[10px] text-slate-400">
-                          MP4, MOV, AVI, WebM
-                        </span>
-                        <span className="text-[10px] text-slate-500">• Max 50MB</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-xl p-3 bg-white/[0.04] border border-white/[0.1] flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-10 w-10 rounded-lg bg-violet-600/20 flex items-center justify-center shrink-0">
-                          <FileVideo className="h-5 w-5 text-violet-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-white truncate">
-                            {videoFile.name}
-                          </p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            {videoMetadata?.size || "24.5 MB"} • {videoMetadata?.duration || "00:28"}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={removeVideoFile}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        title="Remove video"
+                        onDragLeave={() => setIsDraggingVideo(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDraggingVideo(false);
+                          if (e.dataTransfer.files?.[0]) {
+                            handleVideoFile(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        className={`relative border-2 border-dashed rounded-2xl p-7 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                          isDraggingVideo
+                            ? "border-[#268CFF] bg-[#268CFF]/10 shadow-md"
+                            : "border-[#D9E2F0] hover:border-[#5B35F5] bg-[#F8FAFC]"
+                        }`}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* SECTION 10: IMAGE INPUT */}
-              {activeInputTab === "use_image" && (
-                <div className="flex flex-col gap-4">
-                  {!imageFile ? (
-                    <div
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setIsDraggingImage(true);
-                      }}
-                      onDragLeave={() => setIsDraggingImage(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDraggingImage(false);
-                        if (e.dataTransfer.files?.[0]) {
-                          handleImageFile(e.dataTransfer.files[0]);
-                        }
-                      }}
-                      className={`relative border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all ${
-                        isDraggingImage
-                          ? "border-cyan-400 bg-cyan-500/10"
-                          : "border-white/10 hover:border-violet-500/40 bg-white/[0.02]"
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) handleImageFile(e.target.files[0]);
-                        }}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
-                      <div className="h-10 w-10 rounded-xl bg-violet-600/20 flex items-center justify-center mb-2">
-                        <ImageIcon className="h-5 w-5 text-violet-400" />
-                      </div>
-                      <p className="text-xs font-semibold text-white">Upload Person Image</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Upload a clear image of the person
-                      </p>
-                      <p className="text-[10px] text-slate-500 mt-2">JPG • PNG • WEBP</p>
-                    </div>
-                  ) : (
-                    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-slate-950/60 p-2 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={imagePreviewUrl || ""}
-                          alt="Person Preview"
-                          className="h-12 w-12 rounded-xl object-cover ring-1 ring-violet-500/40"
+                        <input
+                          type="file"
+                          accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) handleVideoFile(e.target.files[0]);
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                         />
-                        <div>
-                          <p className="text-xs font-medium text-white truncate max-w-[180px]">
-                            {imageFile.name}
-                          </p>
-                          <p className="text-[10px] text-cyan-400">Portrait Image Ready</p>
+                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-[#5B35F5]/20 to-[#268CFF]/20 flex items-center justify-center mb-3">
+                          <Upload className="h-6 w-6 text-[#5B35F5]" />
+                        </div>
+                        <p className="text-xs font-bold text-[#17233C]">
+                          Drag &amp; drop a video file here
+                        </p>
+                        <p className="text-[11px] text-[#61708A] mt-1">or click to upload</p>
+                        <div className="mt-4 flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-white border border-[#D9E2F0] text-[10px] font-medium text-[#61708A]">
+                            MP4, MOV, AVI, WebM
+                          </span>
+                          <span className="text-[10px] text-[#61708A]">Max 500MB</span>
                         </div>
                       </div>
-                      <button
-                        onClick={removeImageFile}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    ) : (
+                      <div className="rounded-xl p-3 bg-[#F8FAFC] border border-[#D9E2F0] flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 rounded-lg bg-[#5B35F5]/10 flex items-center justify-center shrink-0">
+                            <FileVideo className="h-5 w-5 text-[#5B35F5]" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#17233C] truncate">
+                              {videoFile.name}
+                            </p>
+                            <p className="text-[11px] text-[#61708A] mt-0.5">
+                              {videoMetadata?.size || "24.5 MB"} • {videoMetadata?.duration || "00:28"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={removeVideoFile}
+                          className="p-1.5 rounded-lg text-[#61708A] hover:text-red-500 hover:bg-red-50 transition-colors"
+                          title="Remove video"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 2: USE IMAGE UI */}
+                {activeInputTab === "use_image" && (
+                  <div className="flex flex-col gap-4">
+                    {!imageFile ? (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingImage(true);
+                        }}
+                        onDragLeave={() => setIsDraggingImage(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDraggingImage(false);
+                          if (e.dataTransfer.files?.[0]) {
+                            handleImageFile(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        className={`relative border-2 border-dashed rounded-2xl p-7 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                          isDraggingImage
+                            ? "border-[#268CFF] bg-[#268CFF]/10"
+                            : "border-[#D9E2F0] hover:border-[#5B35F5] bg-[#F8FAFC]"
+                        }`}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/jpg"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) handleImageFile(e.target.files[0]);
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-[#5B35F5]/20 to-[#268CFF]/20 flex items-center justify-center mb-3">
+                          <ImageIcon className="h-6 w-6 text-[#268CFF]" />
+                        </div>
+                        <p className="text-xs font-bold text-[#17233C]">
+                          Upload a portrait photo
+                        </p>
+                        <p className="text-[11px] text-[#61708A] mt-1">PNG, JPG, WebP</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl p-3 bg-[#F8FAFC] border border-[#D9E2F0] flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {imagePreviewUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={imagePreviewUrl}
+                              alt="Uploaded portrait"
+                              className="h-10 w-10 rounded-lg object-cover ring-1 ring-[#D9E2F0]"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#17233C] truncate">
+                              {imageFile.name}
+                            </p>
+                            <span className="text-[10px] text-emerald-600 font-semibold">
+                              Portrait ready for animation
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={removeImageFile}
+                          className="p-1.5 rounded-lg text-[#61708A] hover:text-red-500 hover:bg-red-50 transition-colors"
+                          title="Remove image"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 3: RECORD VOICE UI */}
+                {activeInputTab === "record_voice" && (
+                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] flex flex-col items-center text-center">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-tr from-[#5B35F5]/20 to-[#268CFF]/20 flex items-center justify-center mb-2">
+                      <Mic className={`h-6 w-6 ${recordingState === "recording" ? "text-red-500 animate-pulse" : "text-[#5B35F5]"}`} />
+                    </div>
+
+                    <span className="text-lg font-mono font-bold text-[#17233C] mb-1">
+                      {formatTimer(recordingTime)}
+                    </span>
+                    <span className="text-xs text-[#61708A] mb-4">
+                      {recordingState === "recording"
+                        ? "Recording in progress... speak clearly"
+                        : recordingState === "paused"
+                        ? "Recording paused"
+                        : recordingState === "recorded"
+                        ? "Voice recorded successfully"
+                        : "Ready to record speech"}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {recordingState === "ready" && (
+                        <button
+                          type="button"
+                          onClick={startRecording}
+                          className="px-4 py-2 rounded-xl text-xs font-bold bg-[#5B35F5] hover:bg-[#4825dc] text-white flex items-center gap-2 shadow-sm"
+                        >
+                          <Mic className="h-4 w-4" />
+                          Start Recording
+                        </button>
+                      )}
+
+                      {recordingState === "recording" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={pauseRecording}
+                            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500 text-white"
+                          >
+                            Pause
+                          </button>
+                          <button
+                            type="button"
+                            onClick={stopRecording}
+                            className="px-4 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white flex items-center gap-1.5"
+                          >
+                            <Square className="h-3.5 w-3.5 fill-white" />
+                            Stop
+                          </button>
+                        </>
+                      )}
+
+                      {recordingState === "paused" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={resumeRecording}
+                            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#5B35F5] text-white"
+                          >
+                            Resume
+                          </button>
+                          <button
+                            type="button"
+                            onClick={stopRecording}
+                            className="px-4 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white"
+                          >
+                            Done
+                          </button>
+                        </>
+                      )}
+
+                      {recordingState === "recorded" && (
+                        <div className="flex items-center gap-2">
+                          {voicePreviewUrl && (
+                            <audio src={voicePreviewUrl} controls className="h-8 max-w-[200px]" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={cancelRecording}
+                            className="p-1.5 rounded-lg text-[#61708A] hover:text-red-500 hover:bg-red-50"
+                            title="Delete recording"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 4: TYPE TEXT UI */}
+                {activeInputTab === "type_text" && (
+                  <div>
+                    <textarea
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      rows={4}
+                      placeholder="Enter the text you want the avatar to speak..."
+                      className="w-full p-3 rounded-xl text-xs bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] placeholder:text-[#61708A] focus:outline-none focus:border-[#5B35F5] focus:ring-1 focus:ring-[#5B35F5] resize-none"
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-[#61708A] mt-1">
+                      <span>Supports 30+ spoken languages</span>
+                      <span>{textInput.length} characters</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 10: TRANSLATION SETTINGS CARD */}
+              <div className="bg-white rounded-2xl border border-[#D9E2F0] p-5 sm:p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#5B35F5]/10 text-[#5B35F5] text-[11px] font-bold">
+                        2
+                      </span>
+                      <h2 className="text-sm font-bold text-[#17233C]">Translation Settings</h2>
+                    </div>
+                    <p className="text-xs text-[#61708A] mt-0.5">
+                      Choose languages and voice options
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  {/* Source Language */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#17233C] mb-1">
+                      Source Language
+                    </label>
+                    <select
+                      value={sourceLanguage}
+                      onChange={(e) => setSourceLanguage(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] focus:outline-none focus:border-[#5B35F5]"
+                    >
+                      <option value="auto">Auto Detect</option>
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Target Language */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#17233C] mb-1">
+                      Target Language
+                    </label>
+                    <select
+                      value={targetLanguage}
+                      onChange={(e) => setTargetLanguage(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] focus:outline-none focus:border-[#5B35F5]"
+                    >
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Voice Option */}
+                <div className="pt-3 border-t border-[#D9E2F0] space-y-3">
+                  <label className="block text-[11px] font-semibold text-[#17233C]">
+                    Voice Option
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVoiceOption("original")}
+                      className={`p-2.5 rounded-xl text-left border transition-all ${
+                        voiceOption === "original"
+                          ? "bg-[#5B35F5]/10 border-[#5B35F5] text-[#5B35F5]"
+                          : "bg-[#F8FAFC] border-[#D9E2F0] text-[#61708A] hover:text-[#17233C]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#17233C]">Original Speaker</span>
+                        <Info className="h-3 w-3 text-[#5B35F5] shrink-0" />
+                      </div>
+                      <span className="text-[9px] text-[#5B35F5] font-extrabold block mt-0.5">
+                        (Recommended)
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setVoiceOption("profile")}
+                      className={`p-2.5 rounded-xl text-left border transition-all ${
+                        voiceOption === "profile"
+                          ? "bg-[#5B35F5]/10 border-[#5B35F5] text-[#5B35F5]"
+                          : "bg-[#F8FAFC] border-[#D9E2F0] text-[#61708A] hover:text-[#17233C]"
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-[#17233C] block">Voice Profile</span>
+                      <span className="text-[10px] text-[#61708A] block mt-0.5">
+                        {voiceProfiles.length} available
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setVoiceOption("natural")}
+                      className={`p-2.5 rounded-xl text-left border transition-all ${
+                        voiceOption === "natural"
+                          ? "bg-[#5B35F5]/10 border-[#5B35F5] text-[#5B35F5]"
+                          : "bg-[#F8FAFC] border-[#D9E2F0] text-[#61708A] hover:text-[#17233C]"
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-[#17233C] block">AI Natural Voice</span>
+                      <span className="text-[10px] text-[#61708A] block mt-0.5">Studio Neural</span>
+                    </button>
+                  </div>
+
+                  {/* Profile Dropdown if Selected */}
+                  {voiceOption === "profile" && (
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#17233C] mb-1">
+                        Select Voice Profile
+                      </label>
+                      <select
+                        value={selectedVoiceProfileId}
+                        onChange={(e) => setSelectedVoiceProfileId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl text-xs bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C]"
+                      >
+                        {voiceProfiles.map((vp) => (
+                          <option key={vp.id} value={vp.id}>
+                            {vp.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   )}
 
-                  {/* Voice Source Options below image */}
-                  <div className="pt-2 border-t border-white/[0.08]">
-                    <label className="block text-xs font-semibold text-slate-300 mb-2">
-                      Voice Source
+                  {/* Preservation Checkbox */}
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#5B35F5]/5 border border-[#5B35F5]/20">
+                    <input
+                      type="checkbox"
+                      id="preserve-voice"
+                      checked={preserveOriginalVoice}
+                      onChange={(e) => setPreserveOriginalVoice(e.target.checked)}
+                      className="mt-0.5 rounded border-[#D9E2F0] text-[#5B35F5] focus:ring-[#5B35F5]"
+                    />
+                    <div className="text-xs">
+                      <label
+                        htmlFor="preserve-voice"
+                        className="font-bold text-[#17233C] cursor-pointer select-none"
+                      >
+                        Preserve original speaker&apos;s voice
+                      </label>
+                      <p className="text-[11px] text-[#61708A] mt-0.5">
+                        Use the authorized speaker&apos;s voice characteristics for the translated speech.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Speaker Consent Checkbox */}
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                    <input
+                      type="checkbox"
+                      id="consent-confirm"
+                      checked={consentConfirmed}
+                      onChange={(e) => setConsentConfirmed(e.target.checked)}
+                      className="mt-0.5 rounded border-[#D9E2F0] text-[#5B35F5] focus:ring-[#5B35F5]"
+                    />
+                    <label
+                      htmlFor="consent-confirm"
+                      className="text-[11px] text-[#61708A] cursor-pointer select-none"
+                    >
+                      I confirm that I have explicit authorization and consent to synthesize this speaker&apos;s voice and visual likeness.
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
+                  </div>
+
+                  {/* SECTION 11: SPEECH SPEED (STRICT DEFAULT: 1.0x) */}
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-semibold text-[#17233C]">
+                        Voice Speed
+                      </label>
+                      <span className="text-[11px] font-bold text-[#5B35F5]">
+                        {voiceSpeed === "1.0"
+                          ? "1.0x (Natural Speed)"
+                          : voiceSpeed === "0.75"
+                          ? "0.75x (Slow & Clear)"
+                          : voiceSpeed === "1.25"
+                          ? "1.25x (Dynamic)"
+                          : voiceSpeed === "1.5"
+                          ? "1.5x (Fast)"
+                          : "2.0x (Double Speed)"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-[#F4F7FC] border border-[#D9E2F0]">
                       {[
-                        { id: "original", label: "Original Speaker Voice" },
-                        { id: "profile", label: "Voice Profile" },
-                        { id: "upload", label: "Upload Voice" },
-                        { id: "record", label: "Record Voice" },
+                        { val: "0.75", label: "0.75x" },
+                        { val: "1.0", label: "1.0x" },
+                        { val: "1.25", label: "1.25x" },
+                        { val: "1.5", label: "1.5x" },
+                        { val: "2.0", label: "2.0x" },
                       ].map((item) => (
                         <button
-                          key={item.id}
+                          key={item.val}
                           type="button"
-                          onClick={() => {
-                            setVoiceSourceOption(item.id as any);
-                            if (item.id === "record") setActiveInputTab("record_voice");
-                          }}
-                          className={`p-2.5 rounded-xl text-[11px] font-medium text-left border transition-all ${
-                            voiceSourceOption === item.id
-                              ? "bg-violet-600/20 border-violet-500/50 text-cyan-300"
-                              : "bg-white/[0.02] border-white/[0.06] text-slate-400 hover:text-white"
+                          onClick={() => setVoiceSpeed(item.val)}
+                          className={`py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                            voiceSpeed === item.val
+                              ? "bg-[#5B35F5] text-white shadow-sm font-bold"
+                              : "text-[#61708A] hover:text-[#17233C]"
                           }`}
                         >
                           {item.label}
@@ -838,803 +1195,425 @@ export default function VideoTranslatorPage() {
                     </div>
                   </div>
                 </div>
-              )}
-
-              {/* SECTION 11: TEXT INPUT */}
-              {activeInputTab === "type_text" && (
-                <div className="flex flex-col gap-2.5">
-                  <div className="relative">
-                    <textarea
-                      value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
-                      rows={5}
-                      placeholder="Type what you want the person to say..."
-                      className="w-full p-3.5 rounded-xl text-xs bg-slate-950/70 border border-white/[0.1] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all resize-none leading-relaxed"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                    <div className="flex items-center gap-3">
-                      <span>
-                        Words:{" "}
-                        <strong className="text-slate-200">
-                          {textInput.trim() ? textInput.trim().split(/\s+/).length : 0}
-                        </strong>
-                      </span>
-                      <span>
-                        Characters:{" "}
-                        <strong className="text-slate-200">{textInput.length}</strong>
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setTextInput("")}
-                        className="px-2 py-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const clipboard = await navigator.clipboard.readText();
-                          setTextInput((prev) => prev + clipboard);
-                        }}
-                        className="px-2 py-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                      >
-                        Paste
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => copyText(textInput)}
-                        className="px-2 py-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                      >
-                        Copy
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SECTION 12: VOICE RECORDING */}
-              {activeInputTab === "record_voice" && (
-                <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-950/50 border border-white/[0.06] text-center">
-                  {/* Large Microphone Button */}
-                  <div className="relative mb-4">
-                    {recordingState === "recording" && (
-                      <span className="absolute -inset-2 rounded-full bg-red-500/20 animate-ping" />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (recordingState === "ready" || recordingState === "recorded") {
-                          startRecording();
-                        } else if (recordingState === "recording") {
-                          stopRecording();
-                        }
-                      }}
-                      className={`relative h-20 w-20 rounded-full flex items-center justify-center shadow-xl transition-all ${
-                        recordingState === "recording"
-                          ? "bg-red-500 text-white shadow-red-500/40 scale-105"
-                          : recordingState === "paused"
-                          ? "bg-amber-500 text-white shadow-amber-500/40"
-                          : "bg-gradient-to-tr from-violet-600 to-cyan-500 text-white shadow-indigo-500/30 hover:scale-105"
-                      }`}
-                    >
-                      <Mic className="h-8 w-8" />
-                    </button>
-                  </div>
-
-                  {/* Timer & Status */}
-                  <div className="mb-4">
-                    <span className="text-xl font-mono font-bold text-white tracking-wider">
-                      {formatTimer(recordingTime)}
-                    </span>
-                    <p className="text-xs text-slate-400 capitalize mt-0.5">
-                      {recordingState === "recording"
-                        ? "Recording Audio..."
-                        : recordingState === "paused"
-                        ? "Recording Paused"
-                        : recordingState === "recorded"
-                        ? "Voice Recorded Ready"
-                        : "Ready to Record"}
-                    </p>
-                  </div>
-
-                  {/* Waveform Visualization */}
-                  <div className="flex items-center justify-center gap-1.5 h-8 mb-5">
-                    {[16, 28, 12, 34, 20, 36, 14, 26, 32, 18, 30, 22].map((height, i) => (
-                      <div
-                        key={i}
-                        className={`w-1 rounded-full transition-all ${
-                          recordingState === "recording"
-                            ? "bg-cyan-400 wave-bar"
-                            : "bg-slate-700 h-2"
-                        }`}
-                        style={{
-                          height: recordingState === "recording" ? `${height}px` : "6px",
-                          animationDelay: `${i * 0.1}s`,
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Recording Control Buttons */}
-                  <div className="flex items-center gap-2">
-                    {recordingState === "ready" && (
-                      <button
-                        type="button"
-                        onClick={startRecording}
-                        className="px-4 py-2 rounded-xl text-xs font-semibold btn-gradient-primary"
-                      >
-                        Start Recording
-                      </button>
-                    )}
-
-                    {recordingState === "recording" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={pauseRecording}
-                          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30"
-                        >
-                          Pause
-                        </button>
-                        <button
-                          type="button"
-                          onClick={stopRecording}
-                          className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-red-500 hover:bg-red-600 text-white"
-                        >
-                          Stop
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelRecording}
-                          className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-
-                    {recordingState === "paused" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={resumeRecording}
-                          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-violet-600 text-white"
-                        >
-                          Resume
-                        </button>
-                        <button
-                          type="button"
-                          onClick={stopRecording}
-                          className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-red-500 text-white"
-                        >
-                          Stop
-                        </button>
-                      </>
-                    )}
-
-                    {recordingState === "recorded" && (
-                      <div className="flex items-center gap-2">
-                        {voicePreviewUrl && (
-                          <audio controls src={voicePreviewUrl} className="h-8 max-w-[200px]" />
-                        )}
-                        <button
-                          type="button"
-                          onClick={cancelRecording}
-                          className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10"
-                          title="Delete voice"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveInputTab("use_image");
-                          }}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                        >
-                          Use Voice
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
-            {/* SECTION 13: TRANSLATION SETTINGS */}
-            <div className="saas-card p-6 border border-white/[0.08]">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600/30 text-violet-300 text-[11px] font-bold">
-                  2
-                </span>
-                <h2 className="text-sm font-bold text-white">Translation Settings</h2>
-              </div>
-              <p className="text-xs text-slate-400 mb-4">
-                Choose languages and voice options.
-              </p>
-
-              {/* Language Selection Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1.5">
-                    Source Language
-                  </label>
-                  <select
-                    value={sourceLanguage}
-                    onChange={(e) => setSourceLanguage(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950/70 border border-white/[0.1] text-slate-100 focus:outline-none focus:border-violet-500/50"
-                  >
-                    <option value="auto">Auto Detect</option>
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <option key={`src-${lang.code}`} value={lang.code}>
-                        {lang.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1.5">
-                    Target Language
-                  </label>
-                  <select
-                    value={targetLanguage}
-                    onChange={(e) => setTargetLanguage(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950/70 border border-white/[0.1] text-slate-100 focus:outline-none focus:border-violet-500/50"
-                  >
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <option key={`tgt-${lang.code}`} value={lang.code}>
-                        {lang.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* SECTION 14: VOICE SETTINGS */}
-              <div className="pt-3 border-t border-white/[0.08] space-y-3">
-                <label className="block text-[11px] font-medium text-slate-300">
-                  Voice Option
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setVoiceOption("original")}
-                    className={`p-2.5 rounded-xl text-left border transition-all ${
-                      voiceOption === "original"
-                        ? "bg-violet-600/20 border-violet-500/50 text-cyan-300"
-                        : "bg-white/[0.02] border-white/[0.06] text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold">Original Speaker Voice</span>
-                      <Info className="h-3 w-3 text-cyan-400 shrink-0" />
-                    </div>
-                    <span className="text-[9px] text-cyan-300 font-bold block mt-1">
-                      (Recommended)
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setVoiceOption("profile")}
-                    className={`p-2.5 rounded-xl text-left border transition-all ${
-                      voiceOption === "profile"
-                        ? "bg-violet-600/20 border-violet-500/50 text-cyan-300"
-                        : "bg-white/[0.02] border-white/[0.06] text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    <span className="text-xs font-semibold block">Voice Profile</span>
-                    <span className="text-[10px] text-slate-400 block mt-1">
-                      {voiceProfiles.length} available
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setVoiceOption("natural")}
-                    className={`p-2.5 rounded-xl text-left border transition-all ${
-                      voiceOption === "natural"
-                        ? "bg-violet-600/20 border-violet-500/50 text-cyan-300"
-                        : "bg-white/[0.02] border-white/[0.06] text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    <span className="text-xs font-semibold block">AI Natural Voice</span>
-                    <span className="text-[10px] text-slate-400 block mt-1">Studio Neural</span>
-                  </button>
-                </div>
-
-                {/* If Voice Profile selected, show dropdown */}
-                {voiceOption === "profile" && (
+            {/* ============================================================ */}
+            {/* RIGHT COLUMN: ~55% (lg:col-span-7) - PREVIEW & OUTPUT */}
+            {/* ============================================================ */}
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              {/* SECTION 12: PREVIEW & OUTPUT CARD */}
+              <div className="bg-white rounded-2xl border border-[#D9E2F0] p-5 sm:p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                      Select Voice Profile
-                    </label>
-                    <select
-                      value={selectedVoiceProfileId}
-                      onChange={(e) => setSelectedVoiceProfileId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-950/70 border border-white/[0.1] text-slate-100"
-                    >
-                      {voiceProfiles.map((vp) => (
-                        <option key={vp.id} value={vp.id}>
-                          {vp.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Preservation Checkbox with Tooltip */}
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-violet-950/20 border border-violet-500/20">
-                  <input
-                    type="checkbox"
-                    id="preserve-voice"
-                    checked={preserveOriginalVoice}
-                    onChange={(e) => setPreserveOriginalVoice(e.target.checked)}
-                    className="mt-0.5 rounded border-white/20 text-violet-600 focus:ring-violet-500"
-                  />
-                  <div className="text-xs">
-                    <label
-                      htmlFor="preserve-voice"
-                      className="font-medium text-white cursor-pointer select-none"
-                    >
-                      Preserve original speaker&apos;s voice
-                    </label>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Use the authorized speaker&apos;s voice characteristics for the translated speech.
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#5B35F5]/10 text-[#5B35F5] text-[11px] font-bold">
+                        3
+                      </span>
+                      <h2 className="text-sm font-bold text-[#17233C]">Preview &amp; Output</h2>
+                    </div>
+                    <p className="text-xs text-[#61708A] mt-0.5">
+                      Original video and translated video will appear here
                     </p>
                   </div>
                 </div>
 
-                {/* Speaker Consent Checkbox */}
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-white/[0.06]">
-                  <input
-                    type="checkbox"
-                    id="consent-confirm"
-                    checked={consentConfirmed}
-                    onChange={(e) => setConsentConfirmed(e.target.checked)}
-                    className="mt-0.5 rounded border-white/20 text-cyan-500 focus:ring-cyan-400"
-                  />
-                  <label
-                    htmlFor="consent-confirm"
-                    className="text-[11px] text-slate-300 cursor-pointer select-none"
-                  >
-                    I confirm that I have explicit authorization and consent to synthesize this speaker&apos;s voice and visual likeness.
-                  </label>
+                {/* DUAL VIDEO PANELS SIDE-BY-SIDE */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  {/* LEFT: Original Video */}
+                  <div className="rounded-2xl overflow-hidden border border-[#D9E2F0] bg-slate-950 flex flex-col shadow-sm">
+                    <div className="p-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.04]">
+                      <span className="text-xs font-semibold text-slate-200">Original Video</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#5B35F5]/30 text-white border border-[#5B35F5]/50">
+                        Detected: {detectedLanguage ? getLanguageByCode(detectedLanguage)?.name : "Tamil"}
+                      </span>
+                    </div>
+
+                    <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+                      {videoPreviewUrl ? (
+                        <video
+                          ref={originalVideoRef}
+                          src={videoPreviewUrl}
+                          controls
+                          playsInline
+                          className="w-full h-full object-contain"
+                          onPlay={() => setIsOrigPlaying(true)}
+                          onPause={() => setIsOrigPlaying(false)}
+                        />
+                      ) : imagePreviewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={imagePreviewUrl}
+                          alt="Original"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                          <FileVideo className="h-9 w-9 mb-2 opacity-40 text-slate-400" />
+                          <span className="text-xs font-medium">No original video uploaded</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* RIGHT: Translated Video */}
+                  <div className="rounded-2xl overflow-hidden border border-[#268CFF]/50 bg-slate-950 flex flex-col shadow-sm">
+                    <div className="p-2.5 border-b border-white/10 flex items-center justify-between bg-[#268CFF]/10">
+                      <span className="text-xs font-bold text-[#35D6FF]">Translated Video</span>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#268CFF]/30 text-[#35D6FF] border border-[#268CFF]/50">
+                        {getLanguageByCode(targetLanguage)?.name || "English"}
+                      </span>
+                    </div>
+
+                    <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+                      {finalVideoUrl ? (
+                        <video
+                          ref={translatedVideoRef}
+                          src={finalVideoUrl}
+                          controls
+                          autoPlay
+                          playsInline
+                          className="w-full h-full object-contain"
+                          onPlay={() => setIsTransPlaying(true)}
+                          onPause={() => setIsTransPlaying(false)}
+                        />
+                      ) : isProcessing ? (
+                        <div className="flex flex-col items-center justify-center text-center p-6 text-[#35D6FF]">
+                          <div className="h-10 w-10 rounded-full border-2 border-[#35D6FF] border-t-transparent animate-spin mb-3" />
+                          <span className="text-xs font-bold">Generating your translated video...</span>
+                          <span className="text-[10px] text-slate-300 mt-1">{progressPercent}% complete</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                          <Video className="h-9 w-9 mb-2 opacity-40 text-slate-400" />
+                          <span className="text-xs font-medium">Translated output will display here</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {finalVideoUrl && (
+                      <div className="p-2.5 border-t border-white/10 bg-white/[0.04] flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 font-mono">MP4 • 720p H.264</span>
+                        <a
+                          href={finalVideoUrl}
+                          download={`translated-${targetLanguage}.mp4`}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-[#35D6FF] hover:bg-[#268CFF] text-[#08162B] transition-colors"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* SECTION 15: VOICE SPEED */}
-                <div className="pt-2">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium text-slate-300">
-                      Voice Speed
-                    </label>
-                    <span className="text-[11px] font-semibold text-cyan-400">
-                      {voiceSpeed === "1.0"
-                        ? "1.0x (Natural Speed)"
-                        : voiceSpeed === "0.75"
-                        ? "0.75x (Slow & Clear)"
-                        : voiceSpeed === "1.25"
-                        ? "1.25x (Dynamic)"
-                        : voiceSpeed === "1.5"
-                        ? "1.5x (Fast)"
-                        : "2.0x (Double Speed)"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-slate-950/60 border border-white/[0.06]">
+                {/* SECTION 13: TRANSCRIPT SECTION */}
+                <div className="border-t border-[#D9E2F0] pt-4">
+                  <div className="flex items-center gap-2 mb-4 border-b border-[#D9E2F0] pb-2">
                     {[
-                      { val: "0.75", label: "0.75x" },
-                      { val: "1.0", label: "1.0x" },
-                      { val: "1.25", label: "1.25x" },
-                      { val: "1.5", label: "1.5x" },
-                      { val: "2.0", label: "2.0x" },
-                    ].map((item) => (
+                      { id: "transcript", label: "Transcript" },
+                      { id: "translation", label: "Translation" },
+                      { id: "subtitles", label: "Subtitles" },
+                      { id: "details", label: "Details" },
+                    ].map((tab) => (
                       <button
-                        key={item.val}
+                        key={tab.id}
                         type="button"
-                        onClick={() => setVoiceSpeed(item.val)}
-                        className={`py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                          voiceSpeed === item.val
-                            ? "bg-violet-600 text-white font-bold shadow-sm"
-                            : "text-slate-400 hover:text-white"
+                        onClick={() => setActiveOutputTab(tab.id as OutputTab)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          activeOutputTab === tab.id
+                            ? "bg-[#5B35F5]/10 text-[#5B35F5] border border-[#5B35F5]/30 font-bold"
+                            : "text-[#61708A] hover:text-[#17233C]"
                         }`}
                       >
-                        {item.label}
+                        {tab.label}
                       </button>
                     ))}
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* ============================================================ */}
-          {/* RIGHT COLUMN: 60% (lg:col-span-7) - PREVIEW & OUTPUT */}
-          {/* ============================================================ */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            {/* SECTION 16 & 17: PREVIEW & OUTPUT */}
-            <div className="saas-card p-6 border border-white/[0.08]">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600/30 text-violet-300 text-[11px] font-bold">
-                      3
-                    </span>
-                    <h2 className="text-sm font-bold text-white">Preview & Output</h2>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Original and translated video will appear here.
-                  </p>
-                </div>
-              </div>
-
-              {/* DUAL VIDEO CARDS SIDE-BY-SIDE */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                {/* LEFT: Original Video */}
-                <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-950/70 flex flex-col">
-                  <div className="p-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-                    <span className="text-xs font-semibold text-slate-200">Original Video</span>
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                      Detected: {detectedLanguage ? getLanguageByCode(detectedLanguage)?.name : "Tamil"}
-                    </span>
-                  </div>
-
-                  <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-                    {videoPreviewUrl ? (
-                      <video
-                        ref={originalVideoRef}
-                        src={videoPreviewUrl}
-                        controls
-                        className="w-full h-full object-contain"
-                        onPlay={() => setIsOrigPlaying(true)}
-                        onPause={() => setIsOrigPlaying(false)}
-                      />
-                    ) : imagePreviewUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={imagePreviewUrl}
-                        alt="Original"
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-center p-6 text-slate-600">
-                        <FileVideo className="h-10 w-10 mb-2 opacity-50" />
-                        <span className="text-xs font-medium">No original video uploaded</span>
+                  {/* Tab: Transcript & Translation Side-by-Side */}
+                  {activeOutputTab === "transcript" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* LEFT: Original Transcript (Tamil) */}
+                      <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-[#17233C]">
+                            Original Transcript ({detectedLanguage ? getLanguageByCode(detectedLanguage)?.name : "Tamil"})
+                          </span>
+                          <button
+                            onClick={() =>
+                              copyText(
+                                transcriptText ||
+                                  "நான் இன்று கல்லூரிக்கு செல்கிறேன். எங்கள் கல்லூரியில் பல நல்ல வாய்ப்புகள் இருக்கின்றன. எல்லோருக்கும் நன்றி.",
+                                "transcript"
+                              )
+                            }
+                            className="p-1 rounded text-[#61708A] hover:text-[#17233C]"
+                            title="Copy transcript"
+                          >
+                            {copiedTranscript ? (
+                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-[#17233C] leading-relaxed font-sans min-h-[60px]">
+                          {transcriptText ||
+                            "நான் இன்று கல்லூரிக்கு செல்கிறேன். எங்கள் கல்லூரியில் பல நல்ல வாய்ப்புகள் இருக்கின்றன. எல்லோருக்கும் நன்றி."}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* RIGHT: Translated Video */}
-                <div className="rounded-2xl overflow-hidden border border-cyan-500/30 bg-slate-950/70 flex flex-col shadow-lg shadow-cyan-500/5">
-                  <div className="p-2.5 border-b border-white/10 flex items-center justify-between bg-cyan-950/20">
-                    <span className="text-xs font-semibold text-cyan-300">Translated Video</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                      {getLanguageByCode(targetLanguage)?.name || "English"}
-                    </span>
-                  </div>
-
-                  <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-                    {finalVideoUrl ? (
-                      <video
-                        ref={translatedVideoRef}
-                        src={finalVideoUrl}
-                        controls
-                        autoPlay
-                        className="w-full h-full object-contain"
-                        onPlay={() => setIsTransPlaying(true)}
-                        onPause={() => setIsTransPlaying(false)}
-                      />
-                    ) : isProcessing ? (
-                      <div className="flex flex-col items-center justify-center text-center p-6 text-cyan-300 animate-pulse">
-                        <div className="h-10 w-10 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin mb-3" />
-                        <span className="text-xs font-semibold">Generating your translated video...</span>
-                        <span className="text-[10px] text-slate-400 mt-1">{progressPercent}% complete</span>
+                      {/* RIGHT: Translated Text (English) */}
+                      <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#268CFF]/30">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-[#268CFF]">
+                            Translated Text ({getLanguageByCode(targetLanguage)?.name || "English"})
+                          </span>
+                          <button
+                            onClick={() =>
+                              copyText(
+                                translatedText ||
+                                  "I am going to college today. There are many good opportunities in our college. Thank you everyone.",
+                                "translation"
+                              )
+                            }
+                            className="p-1 rounded text-[#61708A] hover:text-[#17233C]"
+                            title="Copy translation"
+                          >
+                            {copiedTranslation ? (
+                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-[#17233C] leading-relaxed font-sans min-h-[60px]">
+                          {translatedText ||
+                            "I am going to college today. There are many good opportunities in our college. Thank you everyone."}
+                        </p>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-center p-6 text-slate-600">
-                        <Video className="h-10 w-10 mb-2 opacity-50" />
-                        <span className="text-xs font-medium">Translated output will display here</span>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
-                  {finalVideoUrl && (
-                    <div className="p-2.5 border-t border-white/10 bg-white/[0.02] flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400">MP4 • 720p H.264</span>
-                      <a
-                        href={finalVideoUrl}
-                        download={`translated-${targetLanguage}.mp4`}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-colors"
-                      >
-                        <Download className="h-3 w-3" />
-                        Download
-                      </a>
+                  {/* Tab: Translation Only */}
+                  {activeOutputTab === "translation" && (
+                    <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                      <p className="text-xs text-[#17233C] leading-relaxed">
+                        {translatedText ||
+                          "I am going to college today. There are many good opportunities in our college. Thank you everyone."}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Tab: Subtitles */}
+                  {activeOutputTab === "subtitles" && (
+                    <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] font-mono text-xs text-[#17233C] space-y-2">
+                      <p className="text-[#61708A]">1</p>
+                      <p className="text-[#5B35F5] font-semibold">00:00:00,500 --&gt; 00:00:02,800</p>
+                      <p>
+                        {translatedText ||
+                          "I am going to college today. There are many good opportunities in our college."}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Tab: Details */}
+                  {activeOutputTab === "details" && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                        <span className="text-[10px] text-[#61708A] block font-medium">Video Codec</span>
+                        <span className="font-bold text-[#17233C]">H.264 (AVC)</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                        <span className="text-[10px] text-[#61708A] block font-medium">Audio Codec</span>
+                        <span className="font-bold text-[#17233C]">AAC (Stereo 192k)</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                        <span className="text-[10px] text-[#61708A] block font-medium">Sample Rate</span>
+                        <span className="font-bold text-[#17233C]">44,100 Hz</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                        <span className="text-[10px] text-[#61708A] block font-medium">Sync Model</span>
+                        <span className="font-bold text-[#5B35F5]">Voxora Visual-Sync</span>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* SECTION 18 & 19: OUTPUT TABS */}
-              <div className="border-t border-white/[0.08] pt-4">
-                <div className="flex items-center gap-2 mb-4 border-b border-white/[0.08] pb-2">
-                  {[
-                    { id: "transcript", label: "Transcript" },
-                    { id: "translation", label: "Translation" },
-                    { id: "subtitles", label: "Subtitles" },
-                    { id: "details", label: "Details" },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveOutputTab(tab.id as OutputTab)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        activeOutputTab === tab.id
-                          ? "bg-violet-600/30 text-cyan-300 border border-violet-500/40 font-semibold"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Tab: Transcript & Translation Side-by-Side */}
-                {activeOutputTab === "transcript" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* LEFT: Original Transcript */}
-                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/[0.08]">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-slate-300">
-                          Original Transcript ({detectedLanguage ? getLanguageByCode(detectedLanguage)?.name : "Tamil"})
-                        </span>
-                        {transcriptText && (
-                          <button
-                            onClick={() => copyText(transcriptText)}
-                            className="p-1 rounded text-slate-400 hover:text-white"
-                            title="Copy transcript"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-300 leading-relaxed font-sans min-h-[60px]">
-                        {transcriptText || "நான் இன்று கல்லூரிக்கு செல்கிறேன்."}
-                      </p>
-                    </div>
-
-                    {/* RIGHT: Translated Text */}
-                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-cyan-500/20">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-cyan-300">
-                          Translated Text ({getLanguageByCode(targetLanguage)?.name || "English"})
-                        </span>
-                        {translatedText && (
-                          <button
-                            onClick={() => copyText(translatedText)}
-                            className="p-1 rounded text-slate-400 hover:text-white"
-                            title="Copy translation"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-200 leading-relaxed font-sans min-h-[60px]">
-                        {translatedText || "I am going to college today."}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab: Translation Only */}
-                {activeOutputTab === "translation" && (
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-white/[0.08]">
-                    <p className="text-sm text-slate-200 leading-relaxed">
-                      {translatedText || "I am going to college today."}
-                    </p>
-                  </div>
-                )}
-
-                {/* Tab: Subtitles */}
-                {activeOutputTab === "subtitles" && (
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-white/[0.08] font-mono text-xs text-slate-300 space-y-2">
-                    <p className="text-slate-500">1</p>
-                    <p className="text-cyan-400">00:00:00,500 --&gt; 00:00:02,800</p>
-                    <p>{translatedText || "I am going to college today."}</p>
-                  </div>
-                )}
-
-                {/* Tab: Details */}
-                {activeOutputTab === "details" && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-slate-950/60 border border-white/[0.08]">
-                      <span className="text-[10px] text-slate-400 block">Video Codec</span>
-                      <span className="font-semibold text-slate-200">H.264 (AVC)</span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-950/60 border border-white/[0.08]">
-                      <span className="text-[10px] text-slate-400 block">Audio Codec</span>
-                      <span className="font-semibold text-slate-200">AAC (Stereo 192k)</span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-950/60 border border-white/[0.08]">
-                      <span className="text-[10px] text-slate-400 block">Sample Rate</span>
-                      <span className="font-semibold text-slate-200">44,100 Hz</span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-950/60 border border-white/[0.08]">
-                      <span className="text-[10px] text-slate-400 block">Sync Model</span>
-                      <span className="font-semibold text-cyan-400">Voxora Visual-Sync</span>
-                    </div>
-                  </div>
+          {/* SECTION 17: PROCESSING STATUS (FULL-WIDTH DARK NAVY CARD AT BOTTOM) */}
+          <div className="rounded-2xl bg-[#08162B] border border-white/10 p-5 sm:p-6 shadow-md text-slate-100">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-[#35D6FF] animate-pulse" />
+                <h3 className="text-sm font-bold text-white">Processing Status</h3>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                <span>Estimated Time: 2–4 minutes</span>
+                {isProcessing && (
+                  <span className="font-bold text-[#35D6FF]">{progressPercent}%</span>
                 )}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* SECTION 20: PROCESSING STATUS CARD (FULL-WIDTH AT BOTTOM) */}
-        <div className="saas-card p-6 border border-white/[0.08]">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-              <h3 className="text-sm font-bold text-white">Processing Status</h3>
-            </div>
-            {isProcessing && (
-              <span className="text-xs font-semibold text-cyan-400">{progressPercent}%</span>
-            )}
-          </div>
+            {/* Stepper Timeline with 9 Connected Steps */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+              {stepsTimeline.map((step, idx) => {
+                const Icon = step.icon;
+                const status = getStepStatus(step.key, idx);
 
-          {/* Stepper Timeline with 9 Steps */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
-            {stepsTimeline.map((step, idx) => {
-              const Icon = step.icon;
-              const status = getStepStatus(step.key, idx);
-
-              return (
-                <div
-                  key={step.key}
-                  className={`flex flex-col items-center text-center p-3 rounded-xl border transition-all ${
-                    status === "completed"
-                      ? "bg-violet-950/30 border-violet-500/40 text-violet-200"
-                      : status === "in_progress"
-                      ? "bg-cyan-950/30 border-cyan-400/60 text-cyan-200 ring-2 ring-cyan-400/20"
-                      : "bg-white/[0.02] border-white/[0.05] text-slate-500"
-                  }`}
-                >
+                return (
                   <div
-                    className={`h-8 w-8 rounded-full flex items-center justify-center mb-2 ${
+                    key={step.key}
+                    className={`flex flex-col items-center text-center p-3 rounded-xl border transition-all ${
                       status === "completed"
-                        ? "bg-violet-600 text-white"
+                        ? "bg-[#5B35F5]/20 border-[#5B35F5]/40 text-violet-200"
                         : status === "in_progress"
-                        ? "bg-cyan-500 text-slate-950 animate-bounce"
-                        : "bg-white/[0.05] text-slate-600"
+                        ? "bg-[#268CFF]/20 border-[#35D6FF]/60 text-cyan-200 ring-2 ring-[#35D6FF]/20"
+                        : "bg-white/[0.02] border-white/[0.05] text-slate-500"
                     }`}
                   >
-                    {status === "completed" ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Icon className="h-4 w-4" />
-                    )}
+                    <div
+                      className={`h-8 w-8 rounded-full flex items-center justify-center mb-2 ${
+                        status === "completed"
+                          ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white"
+                          : status === "in_progress"
+                          ? "bg-[#35D6FF] text-[#08162B] animate-bounce shadow-md shadow-[#35D6FF]/30"
+                          : "bg-white/[0.06] text-slate-500"
+                      }`}
+                    >
+                      {status === "completed" ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Icon className="h-4 w-4" />
+                      )}
+                    </div>
+                    <span className="text-[11px] font-bold truncate w-full mb-0.5">
+                      {step.label}
+                    </span>
+                    <span
+                      className={`text-[9px] uppercase tracking-wider font-extrabold ${
+                        status === "completed"
+                          ? "text-[#35D6FF]"
+                          : status === "in_progress"
+                          ? "text-cyan-300"
+                          : "text-slate-600"
+                      }`}
+                    >
+                      {status === "completed"
+                        ? "Completed"
+                        : status === "in_progress"
+                        ? "In Progress"
+                        : "Pending"}
+                    </span>
                   </div>
-                  <span className="text-[11px] font-semibold truncate w-full mb-1">
-                    {step.label}
-                  </span>
-                  <span
-                    className={`text-[9px] uppercase tracking-wider font-bold ${
-                      status === "completed"
-                        ? "text-violet-400"
-                        : status === "in_progress"
-                        ? "text-cyan-400"
-                        : "text-slate-600"
-                    }`}
-                  >
-                    {status === "completed"
-                      ? "Completed"
-                      : status === "in_progress"
-                      ? "In Progress"
-                      : "Pending"}
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SECTION 18: MAIN CTA BUTTON ROW */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+            <p className="text-xs text-[#61708A]">
+              Output is digitally labeled with <code className="text-[#5B35F5] font-semibold">AI-generated voice &amp; video</code> for transparency.
+            </p>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isProcessing}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#5B35F5] via-[#268CFF] to-[#35D6FF] text-white shadow-lg shadow-[#5B35F5]/30 hover:shadow-[#5B35F5]/50 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  <span>Processing Video Pipeline...</span>
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4" />
+                  <span>Translate &amp; Generate Video</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* SECTION 21: MAIN ACTION BUTTON ROW */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-          <p className="text-xs text-slate-400">
-            Output is digitally labeled with <code className="text-cyan-400">AI-generated voice &amp; video</code> for transparency.
-          </p>
-
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isProcessing}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2.5 btn-gradient-primary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {isProcessing ? (
-              <>
-                <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                <span>Processing Video Pipeline...</span>
-              </>
-            ) : (
-              <>
-                <Wand2 className="h-4 w-4" />
-                <span>Translate &amp; Generate Video</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* SECTION 22, 23, 24: SUPPLEMENTARY WIDGETS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          {/* SECTION 22: RECENT PROJECTS WIDGET */}
-          <div className="saas-card p-5 border border-white/[0.08]">
+        {/* ============================================================ */}
+        {/* RIGHT SIDEBAR: RECENT PROJECTS, QUICK TIPS, SUPPORTED LANGS */}
+        {/* Width approximately 230px on desktop */}
+        {/* ============================================================ */}
+        <aside className="w-full xl:w-[230px] shrink-0 flex flex-col gap-4">
+          {/* SECTION 14: RECENT PROJECTS */}
+          <div className="bg-white rounded-2xl border border-[#D9E2F0] p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-[#17233C] uppercase tracking-wider">
                 Recent Projects
               </h4>
-              <a href="/projects" className="text-[11px] text-cyan-400 hover:underline">
+              <a href="/projects" className="text-[11px] font-semibold text-[#5B35F5] hover:underline">
                 View All
               </a>
             </div>
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {recentProjects.map((p) => (
                 <a
                   key={p.id}
                   href={`/projects`}
-                  className="flex items-center justify-between p-2.5 rounded-xl hover:bg-white/[0.04] border border-white/[0.04] transition-all group"
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-[#D9E2F0]/80 bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-all group"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="h-8 w-8 rounded-lg bg-violet-600/20 flex items-center justify-center text-violet-400 shrink-0">
-                      <FileVideo className="h-4 w-4" />
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="h-7 w-7 rounded-lg bg-[#5B35F5]/10 flex items-center justify-center text-[#5B35F5] shrink-0">
+                      <FileVideo className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-slate-200 group-hover:text-cyan-300 truncate">
+                      <p className="text-[11px] font-semibold text-[#17233C] group-hover:text-[#5B35F5] truncate">
                         {p.title}
                       </p>
-                      <p className="text-[10px] text-slate-400">
+                      <p className="text-[9px] text-[#61708A]">
                         {p.srcLang} → {p.tgtLang} • {p.duration}
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-white shrink-0" />
+                  <MoreVertical className="h-3.5 w-3.5 text-[#61708A] group-hover:text-[#17233C] shrink-0" />
                 </a>
               ))}
             </div>
           </div>
 
-          {/* SECTION 23: QUICK TIPS CARD */}
-          <div className="saas-card p-5 border border-white/[0.08]">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">
+          {/* SECTION 15: QUICK TIPS */}
+          <div className="bg-white rounded-2xl border border-[#D9E2F0] p-4 shadow-sm">
+            <h4 className="text-xs font-bold text-[#17233C] uppercase tracking-wider mb-3">
               Quick Tips
             </h4>
-            <div className="space-y-2.5 text-xs text-slate-300">
+            <div className="space-y-2.5">
               {[
                 "Upload a clear video with a visible face.",
-                "Select source and target languages.",
-                "Select the original or authorized voice profile.",
-                "Click Translate & Generate.",
-                "Download your translated video.",
+                "Choose source and target languages.",
+                "Select the original or a voice profile.",
+                "Click translate & generate.",
+                "Download your video.",
               ].map((tip, idx) => (
-                <div key={idx} className="flex items-start gap-2.5">
-                  <span className="flex h-4 w-4 rounded-full bg-violet-600/40 text-cyan-300 text-[10px] font-bold items-center justify-center shrink-0 mt-0.5">
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="flex h-4 w-4 rounded-full bg-[#5B35F5]/10 text-[#5B35F5] text-[10px] font-extrabold items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
-                  <span className="text-[11px] text-slate-300 leading-snug">{tip}</span>
+                  <span className="text-[11px] text-[#61708A] leading-snug">{tip}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* SECTION 24: SUPPORTED LANGUAGES CARD */}
-          <div className="saas-card p-5 border border-white/[0.08]">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">
-              Supported Languages
-            </h4>
+          {/* SECTION 16: SUPPORTED LANGUAGES */}
+          <div className="bg-white rounded-2xl border border-[#D9E2F0] p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold text-[#17233C] uppercase tracking-wider">
+                Supported Languages
+              </h4>
+              <span className="text-[10px] text-[#61708A] font-medium">30+ Total</span>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {[
                 "Tamil",
@@ -1652,60 +1631,60 @@ export default function VideoTranslatorPage() {
               ].map((lang) => (
                 <span
                   key={lang}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:border-violet-500/40 hover:text-white transition-colors"
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-[#F4F7FC] border border-[#D9E2F0] text-[#17233C] hover:border-[#5B35F5] hover:text-[#5B35F5] transition-colors cursor-default"
                 >
                   {lang}
                 </span>
               ))}
             </div>
           </div>
-        </div>
+        </aside>
       </div>
 
       {/* HOW IT WORKS MODAL */}
       {showHowItWorks && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg saas-card p-6 border border-violet-500/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-2xl p-6 border border-[#D9E2F0] shadow-2xl text-[#17233C]">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-violet-600/20 text-cyan-400">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#5B35F5]/10 text-[#5B35F5]">
                   <Video className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">How AI Video Translation Works</h3>
-                  <p className="text-xs text-slate-400">Autonomous Multimodal Pipeline</p>
+                  <h3 className="text-base font-bold text-[#17233C]">How AI Video Translation Works</h3>
+                  <p className="text-xs text-[#61708A]">Autonomous Multimodal Pipeline</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowHowItWorks(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#61708A] hover:text-[#17233C]"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-slate-300 my-4 leading-relaxed">
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <strong className="text-cyan-300 block mb-0.5">1. Multimodal Audio Extraction</strong>
+            <div className="space-y-3 text-xs text-[#61708A] my-4 leading-relaxed">
+              <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <strong className="text-[#5B35F5] block mb-0.5 font-bold">1. Multimodal Audio Extraction</strong>
                 Your speaking video is ingested and the raw speech track is extracted at 16kHz studio fidelity.
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <strong className="text-violet-300 block mb-0.5">2. High-Accuracy Transcription & Translation</strong>
+              <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <strong className="text-[#268CFF] block mb-0.5 font-bold">2. High-Accuracy Transcription &amp; Translation</strong>
                 Whisper transcribes speech into Unicode text, detects the language, and translates to your chosen target language.
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <strong className="text-cyan-300 block mb-0.5">3. Same-Speaker Voice Synthesis</strong>
+              <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <strong className="text-[#5B35F5] block mb-0.5 font-bold">3. Same-Speaker Voice Synthesis</strong>
                 The translated text is spoken using authorized timbre and voice characteristics matching the original speaker.
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <strong className="text-violet-300 block mb-0.5">4. Lip-Synchronization & MP4 Rendering</strong>
+              <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <strong className="text-[#268CFF] block mb-0.5 font-bold">4. Lip-Synchronization &amp; MP4 Rendering</strong>
                 The original video visuals are matched with the translated speech track and exported into standard H.264 MP4.
               </div>
             </div>
 
             <button
               onClick={() => setShowHowItWorks(false)}
-              className="w-full py-2.5 rounded-xl text-xs font-semibold btn-gradient-primary"
+              className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-md shadow-[#5B35F5]/30 cursor-pointer"
             >
               Got It
             </button>
