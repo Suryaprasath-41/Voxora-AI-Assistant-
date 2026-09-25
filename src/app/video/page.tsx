@@ -12,25 +12,16 @@ import {
   Globe2,
   Volume2,
   Sparkles,
-  ShieldCheck,
-  ShieldAlert,
-  Play,
-  Pause,
   Download,
   CheckCircle2,
   AlertCircle,
   FileVideo,
   Image as ImageIcon,
-  RotateCcw,
   Check,
   Info,
-  Clock,
-  ExternalLink,
   Square,
   Trash2,
   Copy,
-  ChevronRight,
-  Maximize2,
   Layers,
   Wand2,
   HelpCircle,
@@ -90,7 +81,6 @@ export default function VideoTranslatorPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
-  const [voiceSourceOption, setVoiceSourceOption] = useState<"original" | "profile" | "upload" | "record">("original");
   const [voiceFile, setVoiceFile] = useState<File | null>(null);
   const [voicePreviewUrl, setVoicePreviewUrl] = useState<string | null>(null);
 
@@ -120,8 +110,6 @@ export default function VideoTranslatorPage() {
   // Video Players references
   const originalVideoRef = useRef<HTMLVideoElement | null>(null);
   const translatedVideoRef = useRef<HTMLVideoElement | null>(null);
-  const [isOrigPlaying, setIsOrigPlaying] = useState(false);
-  const [isTransPlaying, setIsTransPlaying] = useState(false);
 
   // UI Modals
   const [showHowItWorks, setShowHowItWorks] = useState(false);
@@ -168,16 +156,17 @@ export default function VideoTranslatorPage() {
     },
   ]);
 
-  // Sync mode changes to default tabs
-  useEffect(() => {
-    if (activeMode === "video") {
+  // Mode Selection handler
+  const handleSelectMode = (mode: VideoMode) => {
+    setActiveMode(mode);
+    if (mode === "video") {
       setActiveInputTab("upload_video");
-    } else if (activeMode === "image") {
+    } else if (mode === "image") {
       setActiveInputTab("use_image");
-    } else if (activeMode === "text") {
+    } else if (mode === "text") {
       setActiveInputTab("type_text");
     }
-  }, [activeMode]);
+  };
 
   // Fetch voice profiles and projects
   useEffect(() => {
@@ -196,7 +185,7 @@ export default function VideoTranslatorPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.projects && data.projects.length > 0) {
-          const mapped = data.projects.map((p: any) => ({
+          const mapped = data.projects.map((p: { id: string; title?: string; sourceLanguage: string; targetLanguage: string; createdAt: string }) => ({
             id: p.id,
             title: p.title || "Untitled Video",
             srcLang: getLanguageByCode(p.sourceLanguage)?.name || p.sourceLanguage,
@@ -506,8 +495,8 @@ export default function VideoTranslatorPage() {
   };
 
   return (
-    <AppLayout variant="light-workspace" maxWidth="max-w-[1760px]">
-      <div className="flex flex-col xl:flex-row gap-6 items-start w-full">
+    <AppLayout>
+      <div className="-m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 bg-[#F4F7FC] min-h-screen text-[#17233C] flex flex-col xl:flex-row gap-6 items-start w-full">
         {/* ============================================================ */}
         {/* CENTER COLUMN: MAIN AI VIDEO TRANSLATOR WORKSPACE */}
         {/* ============================================================ */}
@@ -585,10 +574,7 @@ export default function VideoTranslatorPage() {
             {/* Tab 1: Video to Video */}
             <button
               type="button"
-              onClick={() => {
-                setActiveMode("video");
-                setActiveInputTab("upload_video");
-              }}
+              onClick={() => handleSelectMode("video")}
               className={`p-4 rounded-2xl text-left transition-all ${
                 activeMode === "video"
                   ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-lg shadow-[#5B35F5]/25 ring-1 ring-white/30"
@@ -607,10 +593,7 @@ export default function VideoTranslatorPage() {
             {/* Tab 2: Image to Video */}
             <button
               type="button"
-              onClick={() => {
-                setActiveMode("image");
-                setActiveInputTab("use_image");
-              }}
+              onClick={() => handleSelectMode("image")}
               className={`p-4 rounded-2xl text-left transition-all ${
                 activeMode === "image"
                   ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-lg shadow-[#5B35F5]/25 ring-1 ring-white/30"
@@ -629,10 +612,7 @@ export default function VideoTranslatorPage() {
             {/* Tab 3: Text to Video */}
             <button
               type="button"
-              onClick={() => {
-                setActiveMode("text");
-                setActiveInputTab("type_text");
-              }}
+              onClick={() => handleSelectMode("text")}
               className={`p-4 rounded-2xl text-left transition-all ${
                 activeMode === "text"
                   ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-lg shadow-[#5B35F5]/25 ring-1 ring-white/30"
@@ -1237,8 +1217,6 @@ export default function VideoTranslatorPage() {
                           controls
                           playsInline
                           className="w-full h-full object-contain"
-                          onPlay={() => setIsOrigPlaying(true)}
-                          onPause={() => setIsOrigPlaying(false)}
                         />
                       ) : imagePreviewUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -1274,8 +1252,6 @@ export default function VideoTranslatorPage() {
                           autoPlay
                           playsInline
                           className="w-full h-full object-contain"
-                          onPlay={() => setIsTransPlaying(true)}
-                          onPause={() => setIsTransPlaying(false)}
                         />
                       ) : isProcessing ? (
                         <div className="flex flex-col items-center justify-center text-center p-6 text-[#35D6FF]">
