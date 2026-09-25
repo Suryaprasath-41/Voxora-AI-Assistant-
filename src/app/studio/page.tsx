@@ -9,15 +9,11 @@ import {
   ShieldAlert,
   Plus,
   Trash2,
-  Volume2,
   Sparkles,
   Upload,
-  Mic,
-  CheckCircle2,
   AlertCircle,
   X,
   Play,
-  Languages,
 } from "lucide-react";
 
 interface VoiceProfile {
@@ -48,9 +44,8 @@ export default function VoiceStudioPage() {
     title: string;
   } | null>(null);
 
-  const loadVoices = async () => {
+  const refreshVoices = async () => {
     try {
-      setLoading(true);
       const res = await fetch("/api/voices");
       if (res.ok) {
         const data = await res.json();
@@ -58,13 +53,26 @@ export default function VoiceStudioPage() {
       }
     } catch (err) {
       console.error("Failed to load voices", err);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadVoices();
+    let ignore = false;
+    fetch("/api/voices")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        if (!ignore) {
+          setVoices(data.voices || []);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load voices", err);
+        if (!ignore) setLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleCreateVoice = async (e: React.FormEvent) => {
@@ -107,7 +115,7 @@ export default function VoiceStudioPage() {
       setProfileName("");
       setConsentChecked(false);
       setSampleFile(null);
-      await loadVoices();
+      await refreshVoices();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Creation failed";
       setFormError(message);
@@ -140,18 +148,24 @@ export default function VoiceStudioPage() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-8">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1">
-              <AudioWaveform className="h-3.5 w-3.5" />
-              <span>Voice Studio & Acoustic Profiling</span>
+      <div className="-m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 bg-[#F4F7FC] min-h-screen text-[#17233C] flex flex-col gap-8">
+        {/* HERO SECTION */}
+        <div className="relative overflow-hidden rounded-2xl bg-[#08162B] border border-white/10 p-6 sm:p-7 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#5B35F5]/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-[#35D6FF]/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 max-w-xl">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#35D6FF] uppercase tracking-wider mb-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-[#35D6FF]" />
+              <span>Voice Studio &amp; Acoustic Profiling</span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white">
+                Authorized
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Authorized Voice Profiles
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-sans">
+              Voice Profiles &amp; Cloning
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
               Create, preserve, and manage authorized speaker voice models with verified consent records for same-speaker multilingual translations.
             </p>
           </div>
@@ -161,23 +175,23 @@ export default function VoiceStudioPage() {
               setFormError(null);
               setModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-medium text-xs sm:text-sm shadow-xl shadow-purple-600/20 transition-all shrink-0"
+            className="relative z-10 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-[#5B35F5] via-[#268CFF] to-[#35D6FF] hover:scale-[1.02] active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#5B35F5]/30 transition-all shrink-0 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Create Voice Profile</span>
           </button>
         </div>
 
-        {/* VOICE SAFETY POLICY BANNER (Section 2) */}
-        <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-6 mb-8 flex flex-col md:flex-row items-center gap-5">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+        {/* VOICE SAFETY POLICY BANNER */}
+        <div className="rounded-2xl border border-[#5B35F5]/20 bg-white p-5 shadow-sm flex flex-col md:flex-row items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5B35F5]/10 text-[#5B35F5]">
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-bold text-white mb-1">
-              Strict Speaker Consent & Ethical AI Policy
+            <h3 className="text-sm font-bold text-[#17233C] mb-1">
+              Strict Speaker Consent &amp; Ethical AI Policy
             </h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-[#61708A] leading-relaxed">
               Voice cloning requires permission from the speaker. Only upload or clone a voice that you own or have explicit authorization to use. Every profile preserves a tamper-proof consent record, and generated speech is transparently marked with the &quot;AI-generated voice&quot; watermark.
             </p>
           </div>
@@ -185,8 +199,8 @@ export default function VoiceStudioPage() {
 
         {/* Active Audio Player if testing a voice */}
         {activeTestingAudio && (
-          <div className="mb-8">
-            <h3 className="text-xs uppercase font-semibold tracking-wider text-slate-400 mb-2">
+          <div className="bg-white rounded-2xl p-5 border border-[#D9E2F0] shadow-sm">
+            <h3 className="text-xs uppercase font-bold tracking-wider text-[#5B35F5] mb-3">
               Auditioning Profile
             </h3>
             <StudioAudioPlayer
@@ -198,37 +212,42 @@ export default function VoiceStudioPage() {
         )}
 
         {/* Voice Profiles Grid */}
-        <div className="mb-12">
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <span>Your Voice Profiles</span>
-            <span className="text-xs font-normal text-slate-400">
-              ({voices.length} {voices.length === 1 ? "profile" : "profiles"})
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#5B35F5]/10 text-[#5B35F5] text-xs font-bold">
+                <AudioWaveform className="h-3.5 w-3.5" />
+              </span>
+              <h2 className="text-base font-bold text-[#17233C]">Your Voice Profiles</h2>
+            </div>
+            <span className="text-xs font-semibold text-[#61708A]">
+              {voices.length} {voices.length === 1 ? "profile" : "profiles"} available
             </span>
-          </h2>
+          </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="rounded-2xl glass-panel p-5 border border-white/5 animate-pulse h-40"
+                  className="rounded-2xl bg-white p-5 border border-[#D9E2F0] animate-pulse h-44 shadow-sm"
                 />
               ))}
             </div>
           ) : voices.length === 0 ? (
-            <div className="rounded-2xl glass-panel p-10 text-center border border-white/10">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 mx-auto mb-3 text-slate-400">
-                <AudioWaveform className="h-7 w-7 text-purple-400" />
+            <div className="rounded-2xl bg-white p-10 text-center border border-[#D9E2F0] shadow-sm">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5B35F5]/10 mx-auto mb-3 text-[#5B35F5]">
+                <AudioWaveform className="h-7 w-7" />
               </div>
-              <h3 className="text-base font-semibold text-white mb-1">
+              <h3 className="text-base font-bold text-[#17233C] mb-1">
                 No voice profiles yet
               </h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto mb-6">
+              <p className="text-xs text-[#61708A] max-w-sm mx-auto mb-6">
                 Create a voice profile with an authorized audio sample to generate multilingual translations in your own voice.
               </p>
               <button
                 onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-xs font-bold text-white shadow-md shadow-[#5B35F5]/25 transition-all"
               >
                 <Plus className="h-4 w-4" />
                 <span>Create Voice Profile</span>
@@ -239,20 +258,20 @@ export default function VoiceStudioPage() {
               {voices.map((voice) => (
                 <div
                   key={voice.id}
-                  className="rounded-2xl glass-panel p-6 border border-white/10 glass-panel-hover flex flex-col justify-between"
+                  className="rounded-2xl bg-white p-6 border border-[#D9E2F0] hover:border-[#5B35F5]/50 hover:shadow-md transition-all flex flex-col justify-between shadow-sm"
                 >
                   <div>
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#5B35F5]/10 text-[#5B35F5]">
                           <AudioWaveform className="h-5 w-5" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-white truncate max-w-[170px]">
+                          <h4 className="text-sm font-bold text-[#17233C] truncate max-w-[170px]">
                             {voice.name}
                           </h4>
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-[#61708A]">
                             Created {new Date(voice.createdAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -260,7 +279,7 @@ export default function VoiceStudioPage() {
 
                       <button
                         onClick={() => handleDeleteVoice(voice.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="p-1.5 rounded-lg text-[#61708A] hover:text-red-500 hover:bg-red-50 transition-colors"
                         title="Delete voice profile"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -269,13 +288,13 @@ export default function VoiceStudioPage() {
 
                     {/* Status & Consent Verification Badges */}
                     <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-                        <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                        <span className="font-medium text-[11px]">
-                          Consent Confirmed & Logged
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                        <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                        <span className="font-semibold text-[11px]">
+                          Consent Confirmed &amp; Logged
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/20">
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#5B35F5] bg-[#5B35F5]/10 px-2.5 py-1 rounded-lg border border-[#5B35F5]/20 font-semibold">
                         <Sparkles className="h-3.5 w-3.5 shrink-0" />
                         <span>Ready for Same-Speaker Translations</span>
                       </div>
@@ -283,18 +302,18 @@ export default function VoiceStudioPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                  <div className="flex items-center justify-between border-t border-[#D9E2F0] pt-4">
                     <button
                       onClick={() => handleTestVoice(voice)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-semibold transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] hover:bg-[#F1F5F9] text-[#17233C] text-xs font-semibold transition-colors"
                     >
-                      <Play className="h-3.5 w-3.5 fill-slate-200" />
+                      <Play className="h-3.5 w-3.5 fill-[#17233C]" />
                       <span>Test Voice</span>
                     </button>
 
                     <a
                       href={`/workspace?voiceProfileId=${voice.id}`}
-                      className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:underline"
+                      className="text-xs font-bold text-[#5B35F5] hover:underline"
                     >
                       Use in Studio →
                     </a>
@@ -305,47 +324,47 @@ export default function VoiceStudioPage() {
           )}
         </div>
 
-        {/* SAME-SPEAKER TRANSLATION SHOWCASE (Section 18) */}
-        <div className="rounded-2xl glass-panel p-8 border border-white/10 relative overflow-hidden">
+        {/* SAME-SPEAKER TRANSLATION SHOWCASE */}
+        <div className="rounded-2xl bg-white p-7 border border-[#D9E2F0] shadow-sm">
           <div className="max-w-2xl mb-6">
-            <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block mb-1">
+            <span className="text-xs font-bold text-[#5B35F5] uppercase tracking-wider block mb-1">
               Architecture Highlight
             </span>
-            <h3 className="text-xl font-bold text-white mb-2">
+            <h3 className="text-lg font-bold text-[#17233C] mb-1">
               Same-Speaker Multilingual Translation
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#61708A] leading-relaxed">
               When you record in an Indian or European language (e.g., Tamil, Hindi, Spanish), the pipeline transcribes the speech, translates it into the target language, and synthesizes the translated speech preserving your authorized vocal identity and speaking timbre.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/5">
-              <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+              <span className="text-[10px] font-bold uppercase text-[#61708A] block mb-1">
                 1. Input Voice (Tamil)
               </span>
-              <p className="text-sm font-medium text-slate-200">
+              <p className="text-sm font-semibold text-[#17233C]">
                 &quot;நான் இன்று கல்லூரிக்கு செல்கிறேன்.&quot;
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-indigo-950/20 border border-indigo-500/20">
-              <span className="text-[10px] font-bold uppercase text-indigo-400 block mb-1">
+            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#268CFF]/30">
+              <span className="text-[10px] font-bold uppercase text-[#268CFF] block mb-1">
                 2. Contextual Translation
               </span>
-              <p className="text-sm font-medium text-slate-200">
+              <p className="text-sm font-semibold text-[#17233C]">
                 &quot;I am going to college today.&quot;
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/20">
-              <span className="text-[10px] font-bold uppercase text-purple-400 block mb-1">
+            <div className="p-4 rounded-xl bg-[#5B35F5]/5 border border-[#5B35F5]/20">
+              <span className="text-[10px] font-bold uppercase text-[#5B35F5] block mb-1">
                 3. Preserved Voice Output
               </span>
-              <p className="text-xs text-purple-200">
-                Synthesized in English with speaker&apos;s timbre & pitch profile.
+              <p className="text-xs text-[#17233C]">
+                Synthesized in English with speaker&apos;s timbre &amp; pitch profile.
               </p>
-              <div className="mt-2 text-[10px] text-purple-300 flex items-center gap-1 font-semibold">
+              <div className="mt-2 text-[10px] text-[#5B35F5] flex items-center gap-1 font-bold">
                 <ShieldAlert className="h-3 w-3" />
                 <span>AI-generated voice</span>
               </div>
@@ -354,133 +373,98 @@ export default function VoiceStudioPage() {
         </div>
       </div>
 
-      {/* CREATE VOICE PROFILE MODAL WITH CONSENT CONFIRMATION (Sections 2 & 17) */}
+      {/* CREATE VOICE PROFILE MODAL */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-2xl glass-panel p-6 sm:p-8 border border-white/15 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 border border-[#D9E2F0] shadow-2xl text-[#17233C]">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#D9E2F0]">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-[#5B35F5]/10 text-[#5B35F5]">
                   <AudioWaveform className="h-5 w-5" />
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Create Voice Profile
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Acoustic profile for same-speaker translation
-                  </p>
-                </div>
+                <h3 className="text-sm font-bold text-[#17233C]">
+                  Create Authorized Voice Profile
+                </h3>
               </div>
-
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="text-[#61708A] hover:text-[#17233C]"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 mb-4">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
                 <span>{formError}</span>
               </div>
             )}
 
-            <form onSubmit={handleCreateVoice} className="space-y-5">
-              {/* Profile Name */}
+            <form onSubmit={handleCreateVoice} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Voice Profile Name
+                <label className="block text-xs font-bold text-[#17233C] mb-1">
+                  Profile Name
                 </label>
                 <input
                   type="text"
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
-                  placeholder="e.g. My Voice, Studio Narrator, Alex"
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-400 transition-colors"
+                  placeholder="e.g. Maddy's Primary Voice"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] text-xs focus:outline-none focus:border-[#5B35F5]"
+                  required
                 />
               </div>
 
-              {/* Audio Sample Upload */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Voice Sample (Audio File or Recording)
+                <label className="block text-xs font-bold text-[#17233C] mb-1">
+                  Audio Sample File
                 </label>
-                <div className="border-2 border-dashed border-white/15 rounded-xl p-4 text-center hover:border-purple-400 transition-colors">
+                <div className="relative border-2 border-dashed border-[#D9E2F0] hover:border-[#5B35F5] rounded-xl p-5 text-center bg-[#F8FAFC]">
                   <input
                     type="file"
                     accept="audio/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setSampleFile(e.target.files[0]);
-                      }
-                    }}
-                    className="hidden"
-                    id="sampleFileInput"
+                    onChange={(e) => setSampleFile(e.target.files?.[0] || null)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    required
                   />
-                  <label
-                    htmlFor="sampleFileInput"
-                    className="cursor-pointer flex flex-col items-center justify-center"
-                  >
-                    <Upload className="h-6 w-6 text-purple-400 mb-2" />
-                    <span className="text-xs text-white font-medium">
-                      {sampleFile ? sampleFile.name : "Click to upload voice sample"}
-                    </span>
-                    <span className="text-[10px] text-slate-400 mt-1">
-                      WAV, MP3, or M4A (10 to 60 seconds recommended)
-                    </span>
-                  </label>
+                  <Upload className="h-6 w-6 text-[#5B35F5] mx-auto mb-1.5" />
+                  <p className="text-xs font-bold text-[#17233C]">
+                    {sampleFile ? sampleFile.name : "Upload 30-60s speaking audio"}
+                  </p>
+                  <p className="text-[10px] text-[#61708A] mt-0.5">WAV, MP3, M4A, WebM (Max 25MB)</p>
                 </div>
               </div>
 
-              {/* MANDATORY VOICE SAFETY CONSENT CHECKBOX (Section 2 & Section 17) */}
-              <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 space-y-3">
-                <div className="flex items-start gap-2.5">
-                  <ShieldAlert className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-purple-200 leading-relaxed font-medium">
-                    &quot;Voice cloning requires permission from the speaker. Only upload or clone a voice that you own or have explicit authorization to use.&quot;
-                  </p>
-                </div>
-
-                <label className="flex items-start gap-3 cursor-pointer pt-2 border-t border-purple-500/20">
-                  <input
-                    type="checkbox"
-                    checked={consentChecked}
-                    onChange={(e) => setConsentChecked(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-purple-400 bg-slate-900 text-purple-600 focus:ring-purple-500"
-                  />
-                  <span className="text-xs text-slate-200 select-none">
-                    I confirm that I own this voice or have permission from the speaker to create this voice profile.
-                  </span>
+              <div className="p-3.5 rounded-xl bg-[#5B35F5]/5 border border-[#5B35F5]/20 flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="consent"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-0.5 rounded border-[#D9E2F0] text-[#5B35F5] focus:ring-[#5B35F5]"
+                  required
+                />
+                <label htmlFor="consent" className="text-xs text-[#17233C] leading-snug cursor-pointer select-none">
+                  <span className="font-bold block mb-0.5">Explicit Authorization Confirmation</span>
+                  I confirm that I am the speaker or have explicit authorized permission to clone this voice.
                 </label>
               </div>
 
-              {/* Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D9E2F0]">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white text-xs font-semibold transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#61708A] hover:text-[#17233C]"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
-                  disabled={creating || !consentChecked || !sampleFile || !profileName}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-lg shadow-purple-600/20 transition-all disabled:opacity-50"
+                  disabled={creating}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white font-bold text-xs shadow-md shadow-[#5B35F5]/25 disabled:opacity-50 cursor-pointer"
                 >
-                  {creating ? (
-                    <span>Analyzing & Creating...</span>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>Create Authorized Profile</span>
-                    </>
-                  )}
+                  {creating ? "Creating Profile..." : "Create Voice Profile"}
                 </button>
               </div>
             </form>

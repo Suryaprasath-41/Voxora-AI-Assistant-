@@ -5,16 +5,14 @@ import { useSession, signOut } from "next-auth/react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SUPPORTED_LANGUAGES } from "@/lib/languages";
 import {
-  Settings,
   User,
   Sliders,
   HardDrive,
   Shield,
-  Trash2,
   Save,
   CheckCircle2,
   AlertTriangle,
-  LogOut,
+  Sparkles,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -109,23 +107,28 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-8 max-w-5xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-1">
-            <Settings className="h-3.5 w-3.5" />
-            <span>Preferences & Data Governance</span>
+      <div className="-m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 bg-[#F4F7FC] min-h-screen text-[#17233C] flex flex-col gap-8 max-w-5xl">
+        {/* HERO SECTION */}
+        <div className="relative overflow-hidden rounded-2xl bg-[#08162B] border border-white/10 p-6 sm:p-7 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#5B35F5]/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-[#35D6FF]/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 max-w-xl">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#35D6FF] uppercase tracking-wider mb-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-[#35D6FF]" />
+              <span>Preferences &amp; Data Governance</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-sans">
+              Studio Settings
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
+              Configure your AI studio profile, translation preferences, speech speed defaults, and privacy controls.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            Studio Settings
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Configure your AI studio profile, translation preferences, storage, and privacy controls.
-          </p>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-2 border-b border-white/10 mb-8 pb-1">
+        {/* TAB NAVIGATION */}
+        <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white border border-[#D9E2F0] shadow-sm">
           {[
             { id: "account", label: "Account Profile", icon: User },
             { id: "preferences", label: "Studio Defaults", icon: Sliders },
@@ -140,8 +143,8 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   active
-                    ? "bg-white/10 text-cyan-400 border border-white/10 shadow-sm"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                    ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm font-bold"
+                    : "text-[#61708A] hover:text-[#17233C]"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -153,170 +156,163 @@ export default function SettingsPage() {
 
         {/* Tab 1: Account */}
         {activeTab === "account" && (
-          <div className="rounded-2xl glass-panel p-6 sm:p-8 border border-white/10 space-y-6">
-            <h3 className="text-base font-bold text-white mb-4">Account Information</h3>
+          <div className="rounded-2xl bg-white p-6 sm:p-8 border border-[#D9E2F0] space-y-6 shadow-sm">
+            <h3 className="text-base font-bold text-[#17233C] mb-4">Account Information</h3>
 
-            <div className="flex items-center gap-4 pb-6 border-b border-white/10">
+            <div className="flex items-center gap-4 pb-6 border-b border-[#D9E2F0]">
               {session?.user?.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={session.user.image}
                   alt={name || "User"}
-                  className="h-16 w-16 rounded-full object-cover ring-2 ring-cyan-400/50"
+                  className="h-16 w-16 rounded-2xl object-cover ring-2 ring-[#5B35F5]/40"
                 />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-600 text-xl font-bold text-white">
-                  {name ? name.charAt(0).toUpperCase() : "U"}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#5B35F5] to-[#268CFF] text-xl font-bold text-white shadow-sm">
+                  {name ? name.charAt(0).toUpperCase() : "M"}
                 </div>
               )}
               <div>
-                <p className="text-sm font-bold text-white">{name || "Voxora User"}</p>
-                <p className="text-xs text-slate-400">{session?.user?.email || "Google Authenticated"}</p>
-                <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
-                  OAuth Verified Session
+                <p className="text-sm font-bold text-[#17233C]">{name || "Maddy"}</p>
+                <p className="text-xs text-[#61708A]">{session?.user?.email || "maddy@example.com"}</p>
+                <span className="inline-block mt-1 text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                  Verified Creator Session
                 </span>
               </div>
             </div>
 
             <div className="max-w-md space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#17233C] uppercase tracking-wider mb-1.5">
                   Display Name
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] text-sm focus:outline-none focus:border-[#5B35F5]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#17233C] uppercase tracking-wider mb-1.5">
                   Email Address
                 </label>
                 <input
                   type="email"
-                  value={session?.user?.email || ""}
+                  value={session?.user?.email || "maddy@example.com"}
                   disabled
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 text-slate-400 text-sm cursor-not-allowed"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-[#61708A] text-sm cursor-not-allowed"
                 />
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  Managed by your Google Authentication provider
-                </span>
               </div>
             </div>
 
-            <div className="pt-4 flex items-center gap-3">
+            <div className="pt-4 flex items-center gap-3 border-t border-[#D9E2F0]">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white font-bold text-xs shadow-md shadow-[#5B35F5]/25 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Save className="h-4 w-4" />
                 <span>{saving ? "Saving..." : "Save Account"}</span>
               </button>
               {savedSuccess && (
-                <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>Changes saved successfully</span>
+                  Preferences updated successfully
                 </span>
               )}
             </div>
           </div>
         )}
 
-        {/* Tab 2: Studio Defaults */}
+        {/* Tab 2: Preferences */}
         {activeTab === "preferences" && (
-          <div className="rounded-2xl glass-panel p-6 sm:p-8 border border-white/10 space-y-6">
-            <h3 className="text-base font-bold text-white mb-2">Translation & Synthesis Defaults</h3>
-            <p className="text-xs text-slate-400 mb-6">
-              Set default source and target languages, voice models, and speech speeds for faster workflows.
-            </p>
+          <div className="rounded-2xl bg-white p-6 sm:p-8 border border-[#D9E2F0] space-y-6 shadow-sm">
+            <h3 className="text-base font-bold text-[#17233C]">Studio &amp; Translation Defaults</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#17233C] mb-1.5">
                   Default Source Language
                 </label>
                 <select
                   value={defaultSourceLanguage}
                   onChange={(e) => setDefaultSourceLanguage(e.target.value)}
-                  className="w-full bg-white/5 text-white text-xs rounded-xl px-4 py-2.5 border border-white/10 focus:outline-none focus:border-cyan-400 appearance-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] text-xs focus:outline-none focus:border-[#5B35F5]"
                 >
+                  <option value="auto">Auto Detect</option>
                   {SUPPORTED_LANGUAGES.map((l) => (
-                    <option key={l.code} value={l.code} className="bg-slate-900">
-                      {l.flag} {l.name}
+                    <option key={l.code} value={l.code}>
+                      {l.name}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#17233C] mb-1.5">
                   Default Target Language
                 </label>
                 <select
                   value={defaultTargetLanguage}
                   onChange={(e) => setDefaultTargetLanguage(e.target.value)}
-                  className="w-full bg-white/5 text-white text-xs rounded-xl px-4 py-2.5 border border-white/10 focus:outline-none focus:border-cyan-400 appearance-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] text-xs focus:outline-none focus:border-[#5B35F5]"
                 >
-                  {SUPPORTED_LANGUAGES.filter((l) => l.code !== "auto").map((l) => (
-                    <option key={l.code} value={l.code} className="bg-slate-900">
-                      {l.flag} {l.name}
+                  {SUPPORTED_LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.name}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Default Voice Style
+                <label className="block text-xs font-bold text-[#17233C] mb-1.5">
+                  Default AI Voice
                 </label>
                 <select
                   value={defaultVoice}
                   onChange={(e) => setDefaultVoice(e.target.value)}
-                  className="w-full bg-white/5 text-white text-xs rounded-xl px-4 py-2.5 border border-white/10 focus:outline-none focus:border-cyan-400 appearance-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] text-xs focus:outline-none focus:border-[#5B35F5]"
                 >
-                  <option value="natural-female" className="bg-slate-900">Aria (Natural Conversational)</option>
-                  <option value="natural-male" className="bg-slate-900">Marcus (Professional)</option>
-                  <option value="friendly-female" className="bg-slate-900">Maya (Friendly & Warm)</option>
-                  <option value="narrator-male" className="bg-slate-900">David (Narrator)</option>
-                  <option value="assistant-female" className="bg-slate-900">Nova (Crisp Assistant)</option>
+                  <option value="natural-female">Natural Female (Warm)</option>
+                  <option value="natural-male">Natural Male (Deep)</option>
+                  <option value="expressive-female">Expressive Female</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Default Playback Speed
+                <label className="block text-xs font-bold text-[#17233C] mb-1.5">
+                  Default Speech Speed (Default: 1.0x)
                 </label>
                 <select
                   value={playbackSpeed}
                   onChange={(e) => setPlaybackSpeed(e.target.value)}
-                  className="w-full bg-white/5 text-white text-xs rounded-xl px-4 py-2.5 border border-white/10 focus:outline-none focus:border-cyan-400 appearance-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-[#17233C] text-xs focus:outline-none focus:border-[#5B35F5]"
                 >
-                  <option value="0.75" className="bg-slate-900">0.75x</option>
-                  <option value="1.0" className="bg-slate-900">1.0x (Standard)</option>
-                  <option value="1.25" className="bg-slate-900">1.25x</option>
-                  <option value="1.5" className="bg-slate-900">1.5x</option>
-                  <option value="2.0" className="bg-slate-900">2.0x</option>
+                  <option value="0.75">0.75x — Slow &amp; Clear</option>
+                  <option value="1.0">1.0x — Natural Speed (Default)</option>
+                  <option value="1.25">1.25x — Dynamic</option>
+                  <option value="1.5">1.5x — Fast</option>
+                  <option value="2.0">2.0x — Double Speed</option>
                 </select>
               </div>
             </div>
 
-            <div className="pt-4 flex items-center gap-3">
+            <div className="pt-4 flex items-center gap-3 border-t border-[#D9E2F0]">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white font-bold text-xs shadow-md shadow-[#5B35F5]/25 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Save className="h-4 w-4" />
                 <span>{saving ? "Saving..." : "Save Preferences"}</span>
               </button>
               {savedSuccess && (
-                <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>Preferences saved</span>
+                  Preferences updated successfully
                 </span>
               )}
             </div>
@@ -325,113 +321,99 @@ export default function SettingsPage() {
 
         {/* Tab 3: Storage */}
         {activeTab === "storage" && (
-          <div className="rounded-2xl glass-panel p-6 sm:p-8 border border-white/10 space-y-6">
-            <h3 className="text-base font-bold text-white mb-2">Storage Usage & Assets</h3>
-            <p className="text-xs text-slate-400 mb-6">
-              Track allocated disk and object storage for uploaded audio, video extractions, and synthesized speech files.
-            </p>
+          <div className="rounded-2xl bg-white p-6 sm:p-8 border border-[#D9E2F0] space-y-6 shadow-sm">
+            <h3 className="text-base font-bold text-[#17233C]">Storage &amp; Asset Footprint</h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-              <div className="p-5 rounded-xl bg-white/[0.03] border border-white/10">
-                <span className="text-xs text-slate-400 block mb-1">Total Storage Used</span>
-                <span className="text-2xl font-extrabold text-cyan-400 font-mono">
-                  {storageData.totalMb} MB
-                </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <span className="text-xs text-[#61708A] block mb-1">Total Storage</span>
+                <span className="text-xl font-bold text-[#17233C]">{storageData.totalMb} MB</span>
               </div>
-
-              <div className="p-5 rounded-xl bg-white/[0.03] border border-white/10">
-                <span className="text-xs text-slate-400 block mb-1">Audio & Speech Files</span>
-                <span className="text-2xl font-extrabold text-white font-mono">
-                  {storageData.fileCount}
-                </span>
+              <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <span className="text-xs text-[#61708A] block mb-1">Audio/Video Files</span>
+                <span className="text-xl font-bold text-[#17233C]">{storageData.fileCount}</span>
               </div>
-
-              <div className="p-5 rounded-xl bg-white/[0.03] border border-white/10">
-                <span className="text-xs text-slate-400 block mb-1">Saved Projects</span>
-                <span className="text-2xl font-extrabold text-indigo-400 font-mono">
-                  {storageData.projectsCount}
-                </span>
+              <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <span className="text-xs text-[#61708A] block mb-1">Total Projects</span>
+                <span className="text-xl font-bold text-[#17233C]">{storageData.projectsCount}</span>
+              </div>
+              <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+                <span className="text-xs text-[#61708A] block mb-1">Voice Profiles</span>
+                <span className="text-xl font-bold text-[#5B35F5]">{storageData.voiceProfilesCount}</span>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950/40 border border-white/5 text-xs text-slate-400 flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-cyan-400 shrink-0" />
-              <span>
-                All audio binaries are isolated in secure object storage with cryptographically randomized paths.
-              </span>
+            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0]">
+              <div className="flex items-center justify-between text-xs text-[#61708A] mb-2 font-medium">
+                <span>Plan Quota Used</span>
+                <span>{storageData.totalMb} MB / 10,240 MB (10 GB)</span>
+              </div>
+              <div className="w-full h-2 bg-[#D9E2F0] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#5B35F5] to-[#268CFF] rounded-full"
+                  style={{
+                    width: `${Math.min(100, (parseFloat(storageData.totalMb) / 10240) * 100 || 2)}%`,
+                  }}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Tab 4: Privacy & Account Deletion (Sections 25 & 44) */}
+        {/* Tab 4: Privacy */}
         {activeTab === "privacy" && (
-          <div className="rounded-2xl glass-panel p-6 sm:p-8 border border-white/10 space-y-6">
-            <h3 className="text-base font-bold text-white mb-2">Privacy & Consent Records</h3>
-            <p className="text-xs text-slate-300 leading-relaxed mb-6">
-              You own all your generated transcripts, translations, and voice assets. VOXORA AI enforces strict speaker authorization and provides full right-to-erasure compliance.
-            </p>
+          <div className="rounded-2xl bg-white p-6 sm:p-8 border border-[#D9E2F0] space-y-6 shadow-sm">
+            <h3 className="text-base font-bold text-[#17233C]">Privacy, Consent &amp; Data Rights</h3>
 
-            <div className="rounded-xl border border-white/10 p-5 bg-white/[0.02] space-y-3 mb-6">
-              <div className="flex items-center gap-2 text-xs font-bold text-white">
-                <Shield className="h-4 w-4 text-emerald-400" />
-                <span>Voice Safety Consent Logs</span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                All voice profiles in your account include cryptographically logged consent confirmations. When you delete a voice profile or project, the corresponding audio files and database records are permanently deleted.
+            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-xs text-[#61708A] leading-relaxed space-y-2">
+              <p>
+                <strong className="text-[#17233C]">Cryptographic Consent Logging:</strong> Whenever you synthesize speech or create a voice profile, VOXORA AI creates a verifiable consent timestamp matching Indian IT Act and international voice privacy standards.
+              </p>
+              <p>
+                <strong className="text-[#17233C]">AI Synthesis Transparency:</strong> All synthesized audio outputs are tagged with the digital &quot;AI-generated voice&quot; label for clear ethical transparency.
               </p>
             </div>
 
-            {/* Danger Zone: Delete Account */}
-            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h4 className="text-sm font-bold text-red-400 flex items-center gap-2 mb-1">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>Danger Zone: Permanent Account Deletion</span>
-                  </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed max-w-lg">
-                    Permanently delete your user account, all projects, voice profiles, uploaded audio recordings, and synthesized speech files. This action cannot be undone.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition-colors shrink-0"
-                >
-                  Delete Account
-                </button>
-              </div>
+            <div className="pt-4 border-t border-red-200">
+              <h4 className="text-sm font-bold text-red-600 mb-1">Danger Zone</h4>
+              <p className="text-xs text-[#61708A] mb-4">
+                Permanently delete your account, saved voice models, and all project recordings.
+              </p>
+              <button
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Delete Account &amp; Data
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* DELETE ACCOUNT CONFIRMATION MODAL */}
+      {/* DELETE ACCOUNT MODAL */}
       {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl glass-panel p-6 border border-red-500/30 shadow-2xl">
-            <div className="flex items-center gap-3 text-red-400 mb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 border border-[#D9E2F0] shadow-2xl text-[#17233C]">
+            <div className="flex items-center gap-3 mb-3 text-red-600">
               <AlertTriangle className="h-6 w-6" />
-              <h3 className="text-base font-bold text-white">Delete User Account?</h3>
+              <h3 className="text-base font-bold">Delete Account Permanently</h3>
             </div>
-
-            <p className="text-xs text-slate-300 mb-6 leading-relaxed">
-              This will permanently delete your profile, all project histories, voice samples, and generated speech files. Are you sure you wish to proceed?
+            <p className="text-xs text-[#61708A] mb-6 leading-relaxed">
+              This action cannot be undone. All your voice profiles, consent audit logs, generated audio, and project history will be permanently erased.
             </p>
-
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteConfirmOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#61708A] hover:text-[#17233C]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={deletingAccount}
-                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-colors disabled:opacity-50"
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-colors"
               >
-                {deletingAccount ? "Deleting Everything..." : "Yes, Permanently Delete"}
+                {deletingAccount ? "Deleting..." : "Permanently Delete"}
               </button>
             </div>
           </div>

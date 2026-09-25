@@ -18,17 +18,13 @@ import {
   Keyboard,
   Globe2,
   Volume2,
-  Sparkles,
   RotateCcw,
   Copy,
   Check,
-  Download,
   ShieldCheck,
-  ShieldAlert,
   ArrowRight,
   AlertCircle,
   FastForward,
-  Play,
 } from "lucide-react";
 
 function WorkspaceContent() {
@@ -46,7 +42,6 @@ function WorkspaceContent() {
 
   // Input states
   const [inputText, setInputText] = useState<string>("");
-  const [inputAudioBlob, setInputAudioBlob] = useState<Blob | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   // Transcription & Detection states
@@ -71,7 +66,6 @@ function WorkspaceContent() {
   // Generated Audio state
   const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null);
   const [isClonedVoice, setIsClonedVoice] = useState<boolean>(false);
-  const [audioDuration, setAudioDuration] = useState<number>(0);
 
   // Multi-step processing status
   const [processingStep, setProcessingStep] = useState<
@@ -98,9 +92,8 @@ function WorkspaceContent() {
             if (p.translations?.[0]) {
               setTranslatedText(p.translations[0].translatedText);
             }
-            if (p.generations?.[0]) {
-              setGeneratedAudioUrl(p.generations[0].audioUrl);
-              setIsClonedVoice(p.generations[0].isClonedVoice);
+            if (p.audioAssets?.[0]?.fileUrl) {
+              setGeneratedAudioUrl(p.audioAssets[0].fileUrl);
             }
           }
         })
@@ -123,32 +116,18 @@ function WorkspaceContent() {
       .catch(console.error);
   }, [voiceProfileIdParam]);
 
-  // When text is typed in Text tab, automatically update input
-  const handleTextChange = (val: string) => {
-    setInputText(val);
-    setTranscriptText(val);
-    if (val.trim()) {
-      const detected = detectLanguageFromText(val);
-      if (sourceLanguage === "auto") {
-        setDetectedLanguage(detected.code);
-        setDetectionConfidence(detected.confidence);
-      }
-    }
-  };
-
-  // When voice recording completes
-  const handleRecordingComplete = async (blob: Blob, liveTranscript?: string) => {
-    setInputAudioBlob(blob);
-    setErrorMessage(null);
+  // Audio recording completion handler
+  const handleRecordingComplete = async (audioBlob: Blob) => {
     setProcessingStep("transcribing");
+    setErrorMessage(null);
+    setTranscriptText("");
+    setTranslatedText("");
+    setGeneratedAudioUrl(null);
 
     try {
       const formData = new FormData();
-      formData.append("file", blob, "recording.webm");
+      formData.append("audio", audioBlob, "recording.webm");
       formData.append("language", sourceLanguage);
-      if (liveTranscript) {
-        formData.append("prompt", liveTranscript);
-      }
 
       const res = await fetch("/api/transcribe", {
         method: "POST",
@@ -159,28 +138,31 @@ function WorkspaceContent() {
       if (!res.ok) throw new Error(data.error || "Transcription failed");
 
       setTranscriptText(data.text);
-      setDetectedLanguage(data.detectedLanguage);
+      setDetectedLanguage(data.language);
       setDetectionConfidence(data.confidence || 0.98);
       setProcessingStep("idle");
 
-      // Auto-trigger translation for seamless flow: SPEAK -> UNDERSTAND -> TRANSLATE
-      await performTranslation(data.text, data.detectedLanguage || sourceLanguage, targetLanguage);
+      // Auto-translate to target language
+      await performTranslation(data.text, data.language || sourceLanguage, targetLanguage);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Transcription error";
+      const msg = err instanceof Error ? err.message : "Transcription failed";
       setErrorMessage(msg);
       setProcessingStep("idle");
     }
   };
 
-  // When audio/video file is uploaded
+  // Upload completion handler
   const handleFileSelected = async (file: File) => {
     setUploadedFile(file);
-    setErrorMessage(null);
     setProcessingStep("uploading");
+    setErrorMessage(null);
+    setTranscriptText("");
+    setTranslatedText("");
+    setGeneratedAudioUrl(null);
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("audio", file);
       formData.append("language", sourceLanguage);
 
       setProcessingStep("transcribing");
@@ -190,28 +172,39 @@ function WorkspaceContent() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Speech extraction failed");
+      if (!res.ok) throw new Error(data.error || "Transcription failed");
 
       setTranscriptText(data.text);
-      setDetectedLanguage(data.detectedLanguage);
-      setDetectionConfidence(data.confidence || 0.98);
+      setDetectedLanguage(data.language);
+      setDetectionConfidence(data.confidence || 0.97);
       setProcessingStep("idle");
 
-      // Auto-trigger translation
-      await performTranslation(data.text, data.detectedLanguage || sourceLanguage, targetLanguage);
+      // Auto-translate to target language
+      await performTranslation(data.text, data.language || sourceLanguage, targetLanguage);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Upload processing failed";
+      const msg = err instanceof Error ? err.message : "File transcription failed";
       setErrorMessage(msg);
       setProcessingStep("idle");
     }
   };
 
-  // Translation execution
-  const performTranslation = async (text: string, src: string, tgt: string) => {
-    if (!text || !text.trim()) return;
+  // Direct text typing handler
+  const handleTextChange = (text: string) => {
+    setInputText(text);
+    setTranscriptText(text);
 
+    // Dynamic lightweight language identification
+    const detected = detectLanguageFromText(text);
+    if (detected && detected.code !== "auto") {
+      setDetectedLanguage(detected.code);
+      setDetectionConfidence(detected.confidence);
+    }
+  };
+
+  // Translation executor
+  const performTranslation = async (text: string, srcLang: string, tgtLang: string) => {
+    if (!text || !text.trim()) return;
     setIsTranslating(true);
-    setProcessingStep("translating");
     setErrorMessage(null);
 
     try {
@@ -219,9 +212,9 @@ function WorkspaceContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: text.trim(),
-          sourceLanguage: src,
-          targetLanguage: tgt,
+          text,
+          sourceLanguage: srcLang,
+          targetLanguage: tgtLang,
         }),
       });
 
@@ -229,23 +222,21 @@ function WorkspaceContent() {
       if (!res.ok) throw new Error(data.error || "Translation failed");
 
       setTranslatedText(data.translatedText);
-      setProcessingStep("idle");
+      if (data.detectedSourceLanguage) {
+        setDetectedLanguage(data.detectedSourceLanguage);
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Translation error";
+      const msg = err instanceof Error ? err.message : "Translation failed";
       setErrorMessage(msg);
-      setProcessingStep("idle");
     } finally {
       setIsTranslating(false);
     }
   };
 
-  // Speech Generation (Text-To-Speech or Authorized Voice Cloning)
+  // Text-To-Speech Synthesis
   const handleGenerateSpeech = async () => {
     const textToSpeak = translatedText || transcriptText;
-    if (!textToSpeak || !textToSpeak.trim()) {
-      setErrorMessage("No text available to synthesize.");
-      return;
-    }
+    if (!textToSpeak) return;
 
     setProcessingStep("synthesizing");
     setErrorMessage(null);
@@ -268,10 +259,9 @@ function WorkspaceContent() {
 
       setGeneratedAudioUrl(data.audioUrl);
       setIsClonedVoice(Boolean(data.isClonedVoice));
-      setAudioDuration(data.duration || 3);
       setProcessingStep("completed");
 
-      // Automatically persist to project history (Section 1)
+      // Automatically persist to project history
       await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -311,30 +301,30 @@ function WorkspaceContent() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6">
+      <div className="-m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 bg-[#F4F7FC] min-h-screen text-[#17233C] flex flex-col gap-6">
         {/* Workspace Subheader / Language Selector Bar */}
-        <div className="rounded-2xl glass-panel p-4 border border-white/10 mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <div className="rounded-2xl bg-white p-4 sm:p-5 border border-[#D9E2F0] shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-bold text-[#17233C] uppercase tracking-wider">
               Translation Pair:
             </span>
 
-            {/* Source Language Selector (Section 9: Auto Detect, Tamil, Hindi, etc.) */}
+            {/* Source Language Selector */}
             <div className="relative">
               <select
                 value={sourceLanguage}
                 onChange={(e) => setSourceLanguage(e.target.value)}
-                className="bg-white/10 text-white text-xs font-semibold rounded-xl px-3 py-1.5 border border-white/15 focus:outline-none focus:border-cyan-400 appearance-none pr-8 cursor-pointer"
+                className="bg-[#F8FAFC] text-[#17233C] text-xs font-bold rounded-xl px-3.5 py-2 border border-[#D9E2F0] focus:outline-none focus:border-[#5B35F5] cursor-pointer"
               >
                 {SUPPORTED_LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code} className="bg-slate-900 text-white">
+                  <option key={lang.code} value={lang.code}>
                     {lang.flag} {lang.name} ({lang.nativeName})
                   </option>
                 ))}
               </select>
             </div>
 
-            <span className="text-slate-500 font-bold">→</span>
+            <span className="text-[#5B35F5] font-extrabold text-sm">→</span>
 
             {/* Target Language Selector */}
             <div className="relative">
@@ -346,10 +336,10 @@ function WorkspaceContent() {
                     performTranslation(transcriptText, detectedLanguage || sourceLanguage, e.target.value);
                   }
                 }}
-                className="bg-cyan-500/10 text-cyan-300 text-xs font-semibold rounded-xl px-3 py-1.5 border border-cyan-500/30 focus:outline-none focus:border-cyan-400 appearance-none pr-8 cursor-pointer"
+                className="bg-[#F8FAFC] text-[#5B35F5] text-xs font-bold rounded-xl px-3.5 py-2 border border-[#D9E2F0] focus:outline-none focus:border-[#5B35F5] cursor-pointer"
               >
                 {SUPPORTED_LANGUAGES.filter((l) => l.code !== "auto").map((lang) => (
-                  <option key={lang.code} value={lang.code} className="bg-slate-900 text-white">
+                  <option key={lang.code} value={lang.code}>
                     {lang.flag} {lang.name} ({lang.nativeName})
                   </option>
                 ))}
@@ -357,7 +347,7 @@ function WorkspaceContent() {
             </div>
           </div>
 
-          {/* Quick Mode Button (Section 20) */}
+          {/* Quick Mode Button */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
@@ -368,7 +358,7 @@ function WorkspaceContent() {
                 }
               }}
               disabled={!transcriptText || processingStep !== "idle"}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition-all disabled:opacity-40"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white text-xs font-bold shadow-md shadow-[#5B35F5]/25 transition-all disabled:opacity-40 cursor-pointer"
               title="Quick Mode: Translate and synthesize in one click"
             >
               <FastForward className="h-3.5 w-3.5" />
@@ -377,36 +367,36 @@ function WorkspaceContent() {
           </div>
         </div>
 
-        {/* Global Error Banner if any */}
+        {/* Global Error Banner */}
         {errorMessage && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center justify-between gap-3">
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-              <span>{errorMessage}</span>
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+              <span className="font-semibold">{errorMessage}</span>
             </div>
             <button
               onClick={() => setErrorMessage(null)}
-              className="text-xs text-red-400 hover:underline"
+              className="text-xs text-red-600 hover:underline font-bold"
             >
               Dismiss
             </button>
           </div>
         )}
 
-        {/* MAIN WORKSPACE GRID: LEFT SIDE (INPUT) & RIGHT SIDE (OUTPUT) - Section 8 */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        {/* MAIN WORKSPACE GRID: LEFT SIDE (INPUT) & RIGHT SIDE (OUTPUT) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* ================= LEFT SIDE: INPUT PANEL ================= */}
           <div className="lg:col-span-6 flex flex-col gap-4">
-            <div className="rounded-2xl glass-panel p-5 border border-white/10 shadow-xl flex-1 flex flex-col">
+            <div className="rounded-2xl bg-white p-5 sm:p-6 border border-[#D9E2F0] shadow-sm flex-1 flex flex-col">
               {/* Input Mode Tabs: [Voice] [Text] [Upload] */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-                <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/5">
+              <div className="flex items-center justify-between border-b border-[#D9E2F0] pb-3 mb-4">
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F4F7FC] border border-[#D9E2F0]">
                   <button
                     onClick={() => setActiveTab("voice")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       activeTab === "voice"
-                        ? "bg-gradient-to-r from-indigo-600 to-cyan-500 text-white shadow-sm"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm"
+                        : "text-[#61708A] hover:text-[#17233C]"
                     }`}
                   >
                     <Mic className="h-3.5 w-3.5" />
@@ -415,10 +405,10 @@ function WorkspaceContent() {
 
                   <button
                     onClick={() => setActiveTab("text")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       activeTab === "text"
-                        ? "bg-gradient-to-r from-indigo-600 to-cyan-500 text-white shadow-sm"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm"
+                        : "text-[#61708A] hover:text-[#17233C]"
                     }`}
                   >
                     <Keyboard className="h-3.5 w-3.5" />
@@ -427,10 +417,10 @@ function WorkspaceContent() {
 
                   <button
                     onClick={() => setActiveTab("upload")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       activeTab === "upload"
-                        ? "bg-gradient-to-r from-indigo-600 to-cyan-500 text-white shadow-sm"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white shadow-sm"
+                        : "text-[#61708A] hover:text-[#17233C]"
                     }`}
                   >
                     <Upload className="h-3.5 w-3.5" />
@@ -438,7 +428,7 @@ function WorkspaceContent() {
                   </button>
                 </div>
 
-                <span className="text-[11px] text-slate-400 font-medium">
+                <span className="text-[11px] text-[#61708A] font-semibold">
                   {activeTab === "voice" && "Microphone Stream"}
                   {activeTab === "text" && "Multilingual Typing"}
                   {activeTab === "upload" && "Audio/Video Dropzone"}
@@ -473,7 +463,7 @@ function WorkspaceContent() {
                         )
                       }
                       disabled={!inputText.trim() || isTranslating}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all disabled:opacity-50"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#5B35F5] to-[#268CFF] text-white text-xs font-bold shadow-md shadow-[#5B35F5]/20 transition-all disabled:opacity-50 cursor-pointer"
                     >
                       <span>Translate</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -500,18 +490,18 @@ function WorkspaceContent() {
 
           {/* ================= RIGHT SIDE: OUTPUT PANEL ================= */}
           <div className="lg:col-span-6 flex flex-col gap-4">
-            <div className="rounded-2xl glass-panel p-5 border border-white/10 shadow-xl flex-1 flex flex-col space-y-5">
-              {/* SECTION A: SOURCE TRANSCRIPTION (Section 12 & 13) */}
+            <div className="rounded-2xl bg-white p-5 sm:p-6 border border-[#D9E2F0] shadow-sm flex-1 flex flex-col space-y-5">
+              {/* SECTION A: SOURCE TRANSCRIPTION */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#17233C]">
                       Original Transcript
                     </span>
                     {detectedLangInfo && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1 font-semibold">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#5B35F5]/10 text-[#5B35F5] border border-[#5B35F5]/20 font-bold">
                         <span>{detectedLangInfo.name}</span>
-                        <span className="text-slate-400">({Math.round(detectionConfidence * 100)}% match)</span>
+                        <span className="text-[#61708A] ml-1">({Math.round(detectionConfidence * 100)}% match)</span>
                       </span>
                     )}
                   </div>
@@ -519,28 +509,28 @@ function WorkspaceContent() {
                   <button
                     onClick={handleCopyTranscript}
                     disabled={!transcriptText}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
+                    className="p-1.5 rounded-lg text-[#61708A] hover:text-[#17233C] hover:bg-[#F4F7FC] transition-colors disabled:opacity-40"
                     title="Copy transcript"
                   >
-                    {copiedTranscript ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedTranscript ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 </div>
 
-                <div className="min-h-[90px] p-3.5 rounded-xl bg-slate-950/60 border border-white/5 text-xs sm:text-sm text-slate-200 leading-relaxed overflow-y-auto max-h-40">
+                <div className="min-h-[90px] p-3.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-xs sm:text-sm text-[#17233C] leading-relaxed overflow-y-auto max-h-40 font-sans">
                   {transcriptText || (
-                    <span className="text-slate-500 italic">
+                    <span className="text-[#61708A] italic">
                       Spoken or typed transcript will appear here with automatic language detection...
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* SECTION B: TRANSLATION DISPLAY (Section 14) */}
+              {/* SECTION B: TRANSLATION DISPLAY */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Globe2 className="h-3.5 w-3.5 text-indigo-400" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <Globe2 className="h-3.5 w-3.5 text-[#5B35F5]" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#17233C]">
                       Translation ({getLanguageByCode(targetLanguage).name})
                     </span>
                   </div>
@@ -555,7 +545,7 @@ function WorkspaceContent() {
                         )
                       }
                       disabled={!transcriptText || isTranslating}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
+                      className="p-1.5 rounded-lg text-[#61708A] hover:text-[#17233C] hover:bg-[#F4F7FC] transition-colors disabled:opacity-40"
                       title="Regenerate translation"
                     >
                       <RotateCcw className="h-3.5 w-3.5" />
@@ -563,10 +553,10 @@ function WorkspaceContent() {
                     <button
                       onClick={handleCopyTranslation}
                       disabled={!translatedText}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
+                      className="p-1.5 rounded-lg text-[#61708A] hover:text-[#17233C] hover:bg-[#F4F7FC] transition-colors disabled:opacity-40"
                       title="Copy translation"
                     >
-                      {copiedTranslation ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedTranslation ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -576,21 +566,21 @@ function WorkspaceContent() {
                   onChange={(e) => setTranslatedText(e.target.value)}
                   placeholder="Context-aware translation output..."
                   rows={4}
-                  className="w-full p-3.5 rounded-xl bg-slate-950/60 border border-indigo-500/20 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 leading-relaxed resize-none"
+                  className="w-full p-3.5 rounded-xl bg-[#F8FAFC] border border-[#D9E2F0] text-xs sm:text-sm text-[#17233C] placeholder:text-[#61708A] focus:outline-none focus:border-[#5B35F5] leading-relaxed resize-none font-sans"
                 />
               </div>
 
-              {/* SECTION C: AI VOICE SELECTION & VOICE PRESERVATION (Sections 16, 17, 18) */}
-              <div className="pt-2 border-t border-white/5 space-y-3">
+              {/* SECTION C: AI VOICE SELECTION & VOICE PRESERVATION */}
+              <div className="pt-2 border-t border-[#D9E2F0] space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                    <Volume2 className="h-3.5 w-3.5 text-purple-400" />
-                    <span>Voice Model & Speaker Timbre</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#17233C] flex items-center gap-1.5">
+                    <Volume2 className="h-3.5 w-3.5 text-[#5B35F5]" />
+                    <span>Voice Model &amp; Speaker Timbre</span>
                   </span>
 
                   {selectedVoiceProfileId && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3 text-purple-400" />
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#5B35F5]/10 text-[#5B35F5] border border-[#5B35F5]/30 flex items-center gap-1 font-bold">
+                      <ShieldCheck className="h-3 w-3 text-[#5B35F5]" />
                       <span>Authorized Voice Profile Active</span>
                     </span>
                   )}
@@ -599,11 +589,11 @@ function WorkspaceContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Voice Category / Profile Selection */}
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">
+                    <label className="block text-[11px] font-bold text-[#17233C] mb-1">
                       Select Voice / Profile
                     </label>
                     <select
-                      value={selectedVoiceProfileId || voiceCategory}
+                      value={selectedVoiceProfileId ? `vp-${selectedVoiceProfileId}` : voiceCategory}
                       onChange={(e) => {
                         const val = e.target.value;
                         if (val.startsWith("vp-")) {
@@ -613,17 +603,17 @@ function WorkspaceContent() {
                           setVoiceCategory(val);
                         }
                       }}
-                      className="w-full bg-white/5 text-white text-xs rounded-xl px-3 py-2 border border-white/10 focus:outline-none focus:border-purple-400 appearance-none"
+                      className="w-full bg-[#F8FAFC] text-[#17233C] text-xs font-semibold rounded-xl px-3 py-2 border border-[#D9E2F0] focus:outline-none focus:border-[#5B35F5]"
                     >
-                      <optgroup label="Standard AI Voices" className="bg-slate-900 text-slate-300">
+                      <optgroup label="Standard AI Voices">
                         <option value="natural-female">Aria (Natural Conversational)</option>
                         <option value="natural-male">Marcus (Studio Professional)</option>
-                        <option value="friendly-female">Maya (Friendly & Warm)</option>
+                        <option value="friendly-female">Maya (Friendly &amp; Warm)</option>
                         <option value="narrator-male">David (Deep Narrator)</option>
                         <option value="assistant-female">Nova (Crisp Assistant)</option>
                       </optgroup>
                       {availableVoices.length > 0 && (
-                        <optgroup label="Authorized Cloned Profiles" className="bg-slate-900 text-purple-300 font-semibold">
+                        <optgroup label="Authorized Cloned Profiles">
                           {availableVoices.map((vp) => (
                             <option key={vp.id} value={`vp-${vp.id}`}>
                               ★ {vp.name} (Same-Speaker Timbre)
@@ -634,21 +624,21 @@ function WorkspaceContent() {
                     </select>
                   </div>
 
-                  {/* Playback Speed */}
+                  {/* Playback Speed (Strictly Default 1.0x) */}
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">
+                    <label className="block text-[11px] font-bold text-[#17233C] mb-1">
                       Speech Tempo / Speed
                     </label>
                     <select
                       value={voiceSpeed}
                       onChange={(e) => setVoiceSpeed(e.target.value)}
-                      className="w-full bg-white/5 text-white text-xs rounded-xl px-3 py-2 border border-white/10 focus:outline-none focus:border-purple-400 appearance-none"
+                      className="w-full bg-[#F8FAFC] text-[#17233C] text-xs font-semibold rounded-xl px-3 py-2 border border-[#D9E2F0] focus:outline-none focus:border-[#5B35F5]"
                     >
-                      <option value="0.75" className="bg-slate-900">0.75x (Slow & Clear)</option>
-                      <option value="1.0" className="bg-slate-900">1.0x (Natural Speed)</option>
-                      <option value="1.25" className="bg-slate-900">1.25x (Dynamic)</option>
-                      <option value="1.5" className="bg-slate-900">1.5x (Fast)</option>
-                      <option value="2.0" className="bg-slate-900">2.0x (Double Speed)</option>
+                      <option value="0.75">0.75x (Slow &amp; Clear)</option>
+                      <option value="1.0">1.0x (Natural Speed - Default)</option>
+                      <option value="1.25">1.25x (Dynamic)</option>
+                      <option value="1.5">1.5x (Fast)</option>
+                      <option value="2.0">2.0x (Double Speed)</option>
                     </select>
                   </div>
                 </div>
@@ -660,7 +650,7 @@ function WorkspaceContent() {
                     (!translatedText && !transcriptText) ||
                     processingStep !== "idle"
                   }
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-semibold text-xs sm:text-sm shadow-xl shadow-purple-600/25 transition-all disabled:opacity-40"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-[#5B35F5] via-[#268CFF] to-[#35D6FF] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#5B35F5]/25 transition-all disabled:opacity-40 cursor-pointer"
                 >
                   <Volume2 className="h-4 w-4" />
                   <span>
@@ -674,12 +664,12 @@ function WorkspaceContent() {
           </div>
         </div>
 
-        {/* BOTTOM SECTION: PROCESSING STATUS STEPPER (Section 20) */}
+        {/* BOTTOM SECTION: PROCESSING STATUS STEPPER */}
         {processingStep !== "idle" && (
-          <div className="rounded-2xl glass-panel p-4 border border-cyan-500/20 bg-cyan-950/10 mb-6">
+          <div className="rounded-2xl bg-[#08162B] p-5 border border-white/10 text-white shadow-md">
             <div className="flex flex-wrap items-center justify-between gap-4 text-xs">
-              <span className="font-semibold text-white flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+              <span className="font-bold text-white flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#35D6FF] animate-pulse" />
                 Pipeline Execution:
               </span>
 
@@ -687,7 +677,7 @@ function WorkspaceContent() {
                 <span
                   className={
                     processingStep === "uploading"
-                      ? "text-cyan-400 font-bold"
+                      ? "text-[#35D6FF] font-bold"
                       : "text-slate-400"
                   }
                 >
@@ -696,7 +686,7 @@ function WorkspaceContent() {
                 <span
                   className={
                     processingStep === "transcribing"
-                      ? "text-cyan-400 font-bold"
+                      ? "text-[#35D6FF] font-bold"
                       : transcriptText
                       ? "text-slate-300"
                       : "text-slate-500"
@@ -707,7 +697,7 @@ function WorkspaceContent() {
                 <span
                   className={
                     processingStep === "translating"
-                      ? "text-cyan-400 font-bold"
+                      ? "text-[#35D6FF] font-bold"
                       : translatedText
                       ? "text-slate-300"
                       : "text-slate-500"
@@ -718,7 +708,7 @@ function WorkspaceContent() {
                 <span
                   className={
                     processingStep === "synthesizing"
-                      ? "text-purple-400 font-bold"
+                      ? "text-[#5B35F5] font-bold"
                       : generatedAudioUrl
                       ? "text-slate-300"
                       : "text-slate-500"
@@ -731,10 +721,10 @@ function WorkspaceContent() {
           </div>
         )}
 
-        {/* BOTTOM SECTION: STUDIO AUDIO PLAYER (Section 22) */}
+        {/* BOTTOM SECTION: STUDIO AUDIO PLAYER */}
         {generatedAudioUrl && (
-          <div className="mt-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="rounded-2xl bg-white p-5 border border-[#D9E2F0] shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#17233C] mb-3">
               Generated Audio Output
             </h3>
             <StudioAudioPlayer
@@ -751,7 +741,7 @@ function WorkspaceContent() {
 
 export default function WorkspacePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#080c14] flex items-center justify-center text-slate-400">Loading Workspace...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center text-[#61708A] font-semibold text-sm">Loading Workspace...</div>}>
       <WorkspaceContent />
     </Suspense>
   );
