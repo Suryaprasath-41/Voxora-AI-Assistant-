@@ -81,7 +81,7 @@ function SidebarInner({ onNavigate }: SidebarProps) {
 
   return (
     <>
-      <aside className="w-[245px] shrink-0 h-screen sticky top-0 flex flex-col justify-between border-r border-white/[0.08] bg-[#090d16]/95 backdrop-blur-2xl p-4 select-none z-40">
+      <aside className="w-[245px] shrink-0 h-screen sticky top-0 flex flex-col justify-between border-r border-white/[0.08] bg-[#080E1E] p-4 select-none z-40">
         <div className="flex flex-col gap-6">
           {/* Brand Header */}
           <Link
@@ -89,8 +89,8 @@ function SidebarInner({ onNavigate }: SidebarProps) {
             onClick={onNavigate}
             className="flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-white/[0.03] transition-colors group"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-400 p-[1.5px] shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#080c14]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 p-[1.5px] shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform">
+              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#050816]">
                 <AudioWaveform className="h-5 w-5 text-cyan-400 animate-pulse" />
               </div>
             </div>
@@ -99,7 +99,7 @@ function SidebarInner({ onNavigate }: SidebarProps) {
                 <span className="text-base font-bold tracking-tight text-white font-sans">
                   VOXORA
                 </span>
-                <span className="text-xs font-black px-1.5 py-0.5 rounded-md bg-gradient-to-r from-violet-500 to-cyan-500 text-white shadow-sm">
+                <span className="text-xs font-black px-1.5 py-0.5 rounded-md bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-sm">
                   AI
                 </span>
               </div>
@@ -120,7 +120,7 @@ function SidebarInner({ onNavigate }: SidebarProps) {
                   onClick={onNavigate}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
                     item.isActive
-                      ? "bg-gradient-to-r from-violet-600/90 to-indigo-600/90 text-white shadow-md shadow-violet-500/20 ring-1 ring-violet-400/40 font-semibold"
+                      ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-white/20 font-semibold"
                       : "text-slate-300 hover:text-white hover:bg-white/[0.05]"
                   }`}
                 >

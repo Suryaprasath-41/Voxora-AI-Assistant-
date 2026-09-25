@@ -74,7 +74,7 @@ export function TopNav({ onToggleMobileMenu }: TopNavProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-30 w-full h-16 border-b border-white/[0.08] bg-[#090d16]/80 backdrop-blur-xl px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+    <header className="sticky top-0 z-30 w-full h-16 border-b border-white/[0.08] bg-[#080E1E] px-4 sm:px-6 lg:px-8 flex items-center justify-between">
       {/* Left: Mobile hamburger & Global Search */}
       <div className="flex items-center gap-3 flex-1 max-w-lg">
         {onToggleMobileMenu && (
